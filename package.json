@@ -1,0 +1,43 @@
+{
+  "name": "spryvai",
+  "version": "1.0.0",
+  "description": "SpryvAI - Plataforma de inteligencia de proyectos",
+  "main": "main.js",
+  "author": "Pablo Sejas - Deloitte",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win nsis --x64 --publish never"
+  },
+  "build": {
+    "appId": "com.deloitte.spryvai",
+    "productName": "SpryvAI",
+    "copyright": "Pablo Sejas - Deloitte 2026",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SpryvAI"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}
