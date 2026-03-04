@@ -1,0 +1,42 @@
+name: Build SpryvAI Windows
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Compilar instalador Windows
+        run: npx electron-builder --win nsis --x64 --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Listar dist
+        run: dir dist
+        shell: cmd
+
+      - name: Subir instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpryvAI-Windows-Installer
+          path: |
+            dist/*.exe
+            dist/**/*.exe
+          if-no-files-found: warn
+          retention-days: 30
