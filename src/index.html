@@ -312,7 +312,8 @@
     .pcard-menu-wrap{position:relative;flex-shrink:0;}
     .pcard-menu-btn{background:none;border:none;color:#555;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s;font-family:'Syne',sans-serif;line-height:1;}
     .pcard-menu-btn:hover{background:rgba(255,255,255,.06);color:#ccc;}
-    .pcard-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:#222;border:1px solid #333;border-radius:10px;padding:5px;min-width:180px;z-index:25;animation:fu .15s ease;box-shadow:0 6px 24px rgba(0,0,0,.45);}
+    /* position:fixed para que NO lo recorte el overflow:hidden de .pcard */
+    .pcard-menu{display:none;position:fixed;background:#222;border:1px solid #333;border-radius:10px;padding:5px;min-width:180px;z-index:60;animation:fu .15s ease;box-shadow:0 6px 24px rgba(0,0,0,.45);}
     .pcard-menu.on{display:block;}
     .pcard-mi{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#aaa;transition:all .15s;}
     .pcard-mi:hover{background:rgba(134,188,37,.07);color:white;}
@@ -324,6 +325,50 @@
     .pcard-pin-ico{font-size:11px;color:var(--g);margin-right:2px;}
     .pcard.completed{opacity:.55;}
     .pcard.completed .pcard-nom{text-decoration:line-through;text-decoration-color:#555;}
+
+    /* ── DEADLINE CARD (vista detalle) ── */
+    .dl-card{display:flex;gap:18px;align-items:stretch;background:linear-gradient(135deg,var(--card),#181818);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:20px;}
+    .dl-card.late{border-color:rgba(255,100,100,.35);}
+    .dl-card.warn{border-color:rgba(255,160,0,.3);}
+    .dl-card.ok  {border-color:rgba(134,188,37,.25);}
+    .dl-counter{flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:90px;padding-right:18px;border-right:1px solid var(--border);}
+    .dl-num{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;line-height:1;}
+    .dl-num.ok{color:var(--g);}.dl-num.warn{color:#ffa000;}.dl-num.late{color:#ff6b6b;}
+    .dl-label{font-size:9px;color:#777;text-transform:uppercase;letter-spacing:1.2px;margin-top:8px;text-align:center;font-weight:600;}
+    .dl-info{flex:1;min-width:0;}
+    .dl-info-fecha{font-family:'Syne',sans-serif;font-size:15px;color:white;font-weight:700;text-transform:capitalize;}
+    .dl-info-sub{font-size:11px;color:#777;margin-top:4px;}
+    .dl-bar{margin-top:12px;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;}
+    .dl-bar-fill{height:100%;border-radius:2px;transition:width .4s;}
+    .dl-bar-fill.ok{background:var(--g);}.dl-bar-fill.warn{background:#ffa000;}.dl-bar-fill.late{background:#ff6b6b;}
+
+    /* Mini-calendario en detalle (más compacto) */
+    .dl-cal{display:none;flex-shrink:0;width:170px;border-left:1px solid var(--border);padding-left:18px;}
+    .dl-cal.show{display:block;}
+    .dl-cal-tit{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;text-align:center;font-weight:600;}
+    .dl-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
+    .dl-cal-wd{font-size:8px;color:#444;text-align:center;font-weight:600;padding:1px 0;}
+    .dl-cal-d{font-size:9px;color:#666;text-align:center;padding:2px 0;border-radius:3px;}
+    .dl-cal-d.empty{visibility:hidden;}
+    .dl-cal-d.today{color:#aaa;border:1px solid #333;}
+    .dl-cal-d.deadline{background:var(--g);color:#0a0a0a;font-weight:800;}
+    .dl-cal-d.deadline.late{background:var(--red);color:white;}
+    .dl-cal-d.deadline.warn{background:#ffa000;color:#0a0a0a;}
+    @media(max-width:600px){.dl-cal{display:none!important;}.dl-card{padding:14px 16px;}.dl-num{font-size:34px;}}
+
+    /* ── RESUMEN EJECUTIVO ── */
+    .resumen-block{background:linear-gradient(135deg,rgba(134,188,37,.06),rgba(134,188,37,.02));border:1px solid rgba(134,188,37,.18);border-radius:12px;padding:18px 20px;margin-bottom:14px;}
+    .resumen-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+    .resumen-tit{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--g);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;gap:6px;}
+    .resumen-acts{display:flex;gap:6px;}
+    .btn-mini{padding:5px 11px;background:none;border:1px solid var(--border);border-radius:7px;color:#888;font-size:11px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif;}
+    .btn-mini:hover{border-color:var(--g);color:var(--g);}
+    .btn-mini:disabled{opacity:.4;cursor:not-allowed;}
+    .resumen-txt{font-size:14px;color:#ccc;line-height:1.7;}
+    .resumen-empty{font-size:13px;color:#666;font-style:italic;text-align:center;padding:8px 0;}
+
+    /* ── COMENTARIOS SIEMPRE VISIBLES ── */
+    .com-tit{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#555;margin-bottom:10px;font-weight:500;margin-top:24px;}
 
     /* ── MINI CALENDARIO ── */
     .cal-side{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;position:sticky;top:76px;}
@@ -516,17 +561,39 @@
         <div class="export-wrap">
           <button class="btn-d" onclick="toggleExportMenu()">⬇ Exportar ▾</button>
           <div class="export-menu" id="exportMenu">
-            <div class="export-item" onclick="exportarTxt()"><span class="export-item-ico">📄</span>Documento .txt</div>
+            <div class="export-item" onclick="exportarResumenTxt()"><span class="export-item-ico">📋</span>Resumen ejecutivo .txt</div>
+            <div class="export-item" onclick="exportarTxt()"><span class="export-item-ico">📄</span>Documento completo .txt</div>
             <div class="export-item" onclick="exportarPptx()"><span class="export-item-ico">📊</span>Presentación .pptx</div>
             <div class="export-item" onclick="exportarPdf()"><span class="export-item-ico">📕</span>Presentación .pdf</div>
           </div>
         </div>
         <button class="btn-d btn-d-save" onclick="guardarYSalir()">💾 Guardar y salir</button>
-        <button class="btn-d btn-d-main" onclick="toggleAdd()">+ Añadir material</button>
       </div>
     </div>
     <div class="det-desc" id="detDesc"></div>
     <div class="det-info" id="detInfo"></div>
+
+    <!-- DEADLINE CARD con contador y mini-calendario -->
+    <div class="dl-card" id="dlCard" style="display:none;">
+      <div class="dl-counter">
+        <div class="dl-num" id="dlNum">-</div>
+        <div class="dl-label" id="dlLabel">días</div>
+      </div>
+      <div class="dl-info">
+        <div class="dl-info-fecha" id="dlFecha">—</div>
+        <div class="dl-info-sub" id="dlSub">—</div>
+        <div class="dl-bar"><div class="dl-bar-fill" id="dlBar" style="width:0%;"></div></div>
+      </div>
+      <div class="dl-cal" id="dlCal">
+        <div class="dl-cal-tit" id="dlCalTit">—</div>
+        <div class="dl-cal-grid">
+          <div class="dl-cal-wd">L</div><div class="dl-cal-wd">M</div><div class="dl-cal-wd">X</div>
+          <div class="dl-cal-wd">J</div><div class="dl-cal-wd">V</div><div class="dl-cal-wd">S</div><div class="dl-cal-wd">D</div>
+        </div>
+        <div class="dl-cal-grid" id="dlCalGrid"></div>
+      </div>
+    </div>
+
     <div class="sec-tit">Equipo</div>
     <div class="miembros-row" id="miembrosRow"></div>
 
@@ -544,14 +611,27 @@
       </div>
     </div>
 
+    <!-- RESUMEN EJECUTIVO -->
+    <div class="resumen-block" id="resumenBlock" style="display:none;">
+      <div class="resumen-hdr">
+        <div class="resumen-tit">✦ Resumen ejecutivo</div>
+        <div class="resumen-acts">
+          <button class="btn-mini" id="btnGenResumen" onclick="generarResumen()">↻ Regenerar</button>
+          <button class="btn-mini" onclick="exportarResumenTxt()">📥 Descargar</button>
+        </div>
+      </div>
+      <div class="resumen-txt" id="resumenTxt"></div>
+    </div>
+
     <!-- DOCUMENTO IA -->
     <div class="doc-wrap">
       <div class="doc-bar"><div class="doc-bar-tit">✦ Elaboración de la IA</div></div>
       <div class="doc-inner" id="docInner"></div>
     </div>
 
-    <!-- AÑADIR MATERIAL -->
-    <div id="addWrap" style="display:none;margin-top:10px;">
+    <!-- COMENTARIOS PARA LA IA (siempre visibles) -->
+    <div class="com-tit">💬 Comentarios e ideas para la IA</div>
+    <div id="addWrap">
       <div class="blk">
         <div class="blk-lbl">Añadir material a esta idea</div>
         <div class="zona" id="zona">
@@ -934,18 +1014,26 @@ function pcardHtml(p){
 // ─── ACCIONES SOBRE PROYECTOS (kebab) ────────────────
 function togglePcardMenu(ev, id){
   ev.stopPropagation();
-  // Cerrar otros menús abiertos
-  document.querySelectorAll('.pcard-menu.on').forEach(function(m){
-    if(m.id !== 'menu-'+id) m.classList.remove('on');
-  });
-  $('menu-'+id).classList.toggle('on');
+  var menu = $('menu-'+id);
+  var yaAbierto = menu.classList.contains('on');
+  // Cerrar todos los menús
+  cerrarTodosMenus();
+  if(yaAbierto) return; // si ya estaba abierto, lo dejamos cerrado
+  // Posicionar el menú bajo el botón (fixed → coords de viewport)
+  var rect = ev.currentTarget.getBoundingClientRect();
+  menu.style.top  = (rect.bottom + 4) + 'px';
+  menu.style.left = (rect.right - 180) + 'px'; // 180 = min-width del menú
+  menu.classList.add('on');
 }
-// Cerrar menús al clicar fuera
-document.addEventListener('click', function(){
+function cerrarTodosMenus(){
   document.querySelectorAll('.pcard-menu.on').forEach(function(m){ m.classList.remove('on'); });
-});
+}
+// Cerrar menús al clicar fuera y al hacer scroll (el menú es fixed, no sigue al scroll)
+document.addEventListener('click', cerrarTodosMenus);
+window.addEventListener('scroll', cerrarTodosMenus, true);
 
 function abrirRenombrar(id){
+  cerrarTodosMenus();
   var p = todosProyectos.find(function(x){ return x.id===id; });
   if(!p) return;
   renameId = id;
@@ -988,6 +1076,7 @@ async function toggleCompletado(id){
 }
 
 function abrirEliminar(id){
+  cerrarTodosMenus();
   var p = todosProyectos.find(function(x){ return x.id===id; });
   if(!p) return;
   deleteId = id;
@@ -1264,6 +1353,8 @@ async function renderDet(){
     info+='<span class="det-info-item"><strong style="color:'+col+'">Límite: '+new Date(cp.fecha_limite).toLocaleDateString('es-ES')+'</strong></span>';
   }
   $('detInfo').innerHTML=info;
+
+  renderDeadlineCard();
   await renderMiembros();
 
   // Idea original colapsable
@@ -1274,7 +1365,170 @@ async function renderDet(){
     $('originalText').textContent=orig;
   } else { ob.style.display='none'; }
 
+  renderResumen();
   renderDoc();
+
+  // Limpiar comentarios/material previo del input
+  rmFile();
+  $('nota').value=''; chk();
+}
+
+// Pinta la tarjeta de cuenta atrás + mini-calendario para la fecha límite
+function renderDeadlineCard(){
+  var card = $('dlCard');
+  if(!cp.fecha_limite){ card.style.display='none'; return; }
+  card.style.display='flex';
+
+  var fechaLim = new Date(cp.fecha_limite);
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var diff = Math.ceil((fechaLim - hoy)/864e5);
+
+  // Estado de urgencia
+  var estado = diff < 0 ? 'late' : diff <= 7 ? 'warn' : 'ok';
+  card.className = 'dl-card ' + estado;
+
+  // Contador grande
+  var num = $('dlNum'), lbl = $('dlLabel');
+  num.className = 'dl-num ' + estado;
+  if(diff < 0){
+    num.textContent = Math.abs(diff);
+    lbl.textContent = diff === -1 ? 'día de retraso' : 'días de retraso';
+  } else if(diff === 0){
+    num.textContent = 'HOY';
+    num.style.fontSize = '26px';
+    lbl.textContent = 'es el día';
+  } else {
+    num.textContent = diff;
+    num.style.fontSize = '';
+    lbl.textContent = diff === 1 ? 'día restante' : 'días restantes';
+  }
+
+  // Info de fecha
+  $('dlFecha').textContent = fechaLim.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  $('dlSub').textContent = diff < 0 ? 'Entrega vencida' : diff === 0 ? 'Entrega hoy mismo' : 'Hasta la fecha de entrega';
+
+  // Barra de progreso: cuanto más cerca de la entrega, más llena
+  // Usamos los últimos 30 días como referencia
+  var barFill = $('dlBar');
+  var pct = diff < 0 ? 100 : diff > 30 ? 10 : 100 - Math.round((diff/30)*90);
+  barFill.style.width = pct + '%';
+  barFill.className = 'dl-bar-fill ' + estado;
+
+  // Mini-calendario del mes de la entrega
+  renderDeadlineMiniCal(fechaLim);
+}
+
+// Mini-calendario muy compacto, con el día de entrega marcado
+function renderDeadlineMiniCal(fechaLim){
+  var grid = $('dlCalGrid'); var cal = $('dlCal');
+  cal.classList.add('show');
+  var m = construirMes(fechaLim);
+  $('dlCalTit').textContent = m.titulo;
+  var deadlineKey = isoFecha(fechaLim);
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var diffHoy = Math.ceil((fechaLim - hoy)/864e5);
+  var estado = diffHoy < 0 ? 'late' : diffHoy <= 7 ? 'warn' : '';
+
+  var html = '';
+  m.dias.forEach(function(d){
+    if(d.vacio){ html += '<div class="dl-cal-d empty"></div>'; return; }
+    var cls = 'dl-cal-d';
+    if(d.esHoy) cls += ' today';
+    if(d.fechaKey === deadlineKey){ cls += ' deadline'; if(estado) cls += ' '+estado; }
+    html += '<div class="'+cls+'">'+d.dia+'</div>';
+  });
+  grid.innerHTML = html;
+}
+
+// ─── RESUMEN EJECUTIVO ──────────────────────────────
+function renderResumen(){
+  var block = $('resumenBlock');
+  // El resumen ejecutivo puede venir o bien explícito en doc.resumen_ejecutivo
+  // o por defecto usamos doc.descripcion (que ya es un resumen de 2-3 frases)
+  var resumen = '';
+  if(cp.documento){
+    resumen = cp.documento.resumen_ejecutivo || cp.documento.descripcion || '';
+  }
+  if(!resumen){ block.style.display='none'; return; }
+  block.style.display='block';
+  $('resumenTxt').textContent = resumen;
+}
+
+// Pide a la IA un resumen ejecutivo enfocado, en una sola llamada corta
+async function generarResumen(){
+  if(!cp.documento){
+    showToast('Primero necesitas elaborar la idea con la IA.', true);
+    return;
+  }
+  var btn = $('btnGenResumen');
+  btn.disabled = true; btn.textContent = '...generando';
+
+  // Construimos contexto compacto a partir del documento actual
+  var doc = cp.documento;
+  var contexto = 'IDEA: '+cp.nombre+'\n';
+  if(cp.descripcion) contexto += 'CONTEXTO: '+cp.descripcion+'\n';
+  contexto += '\nDOCUMENTO ELABORADO:\n'+doc.titulo+'\n'+doc.descripcion+'\n\n';
+  doc.secciones.forEach(function(s){
+    contexto += s.numero+'. '+s.titulo+': '+(s.contenido||'').substring(0,300)+'\n\n';
+  });
+
+  var prompt = contexto + '\nGenera un RESUMEN EJECUTIVO de 3-4 frases, en español, tono profesional Deloitte. Debe captar la esencia de la idea, su valor y los puntos clave. Devuelve SOLO el texto del resumen, sin títulos ni explicaciones.';
+
+  try {
+    var r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:600, messages:[{role:'user', content:prompt}]})
+    });
+    var data = await r.json();
+    if(data.error) throw new Error(data.error.message);
+    var txt = '';
+    for(var i=0;i<data.content.length;i++){ if(data.content[i].text) txt += data.content[i].text; }
+    txt = txt.trim();
+    if(!txt) throw new Error('Respuesta vacía');
+
+    // Guardar en el documento
+    cp.documento.resumen_ejecutivo = txt;
+    await sb.from('proyectos').update({documento: cp.documento}).eq('id', cp.id);
+
+    // Actualizar cache local
+    var idx = todosProyectos.findIndex(function(p){ return p.id===cp.id; });
+    if(idx >= 0) todosProyectos[idx].documento = cp.documento;
+
+    renderResumen();
+    showToast('✓ Resumen actualizado');
+  } catch(err){
+    showToast('Error: '+err.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = '↻ Regenerar';
+  }
+}
+
+// Descarga el resumen ejecutivo como .txt
+async function exportarResumenTxt(){
+  $('exportMenu').classList.remove('on');
+  if(!cp || !cp.documento){ showToast('Aún no hay nada que resumir.', true); return; }
+  var resumen = cp.documento.resumen_ejecutivo || cp.documento.descripcion || '';
+  if(!resumen){ showToast('No hay resumen disponible.', true); return; }
+
+  var L = Array(50).join('─');
+  var txt = 'RESUMEN EJECUTIVO\n'+L+'\n\n';
+  txt += cp.nombre.toUpperCase()+'\n';
+  if(cp.tag) txt += cp.tag + (cp.fecha_limite ? ' · Entrega: '+new Date(cp.fecha_limite).toLocaleDateString('es-ES') : '') + '\n';
+  txt += '\n'+L+'\n\n'+resumen+'\n\n'+L+'\n';
+  txt += 'Generado con SpryvAI · Deloitte · '+new Date().toLocaleDateString('es-ES');
+
+  if(window.spryvai){
+    var res = await window.spryvai.exportarDoc(cp.nombre+'_resumen', txt);
+    if(res.ok) showToast('✓ Guardado: '+res.ruta.split('\\').pop());
+  } else {
+    var bl = new Blob([txt], {type:'text/plain;charset=utf-8'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(bl);
+    a.download = cp.nombre.replace(/ /g,'_')+'_resumen.txt';
+    a.click();
+    showToast('✓ Resumen descargado');
+  }
 }
 
 // Colapsar / expandir la idea original
@@ -1317,7 +1571,7 @@ async function invitar(uid,nom){
 function renderDoc(){
   var inner=$('docInner');
   if(!cp.documento){
-    inner.innerHTML='<div class="doc-empty"><div class="doc-empty-ico">💡</div><p>La IA aún no ha elaborado esta idea.</p><p style="margin-top:6px;font-size:12px;">Pulsa <strong style="color:var(--g)">+ Añadir material</strong> para empezar.</p></div>';
+    inner.innerHTML='<div class="doc-empty"><div class="doc-empty-ico">💡</div><p>La IA aún no ha elaborado esta idea.</p><p style="margin-top:6px;font-size:12px;">Escribe un comentario o adjunta material <strong style="color:var(--g)">abajo</strong> y pulsa <strong style="color:var(--g)">Actualizar con IA</strong>.</p></div>';
     return;
   }
   var doc=cp.documento;
@@ -1391,11 +1645,9 @@ function renderContenidoIA(txt){
 function scrollS(id){ var el=$(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 
 // ─── AÑADIR MATERIAL ────────────────────────────────
-function toggleAdd(forceOpen){
-  var w=$('addWrap');
-  var shouldOpen = forceOpen===true ? true : w.style.display==='none';
-  w.style.display=shouldOpen?'block':'none';
-  if(shouldOpen) setTimeout(function(){ w.scrollIntoView({behavior:'smooth',block:'start'}); },80);
+// El panel de comentarios está siempre visible; esta función solo lleva el scroll allí
+function toggleAdd(){
+  setTimeout(function(){ $('addWrap').scrollIntoView({behavior:'smooth',block:'start'}); }, 80);
 }
 
 function setF(f){
@@ -1419,7 +1671,8 @@ zona.addEventListener('dragover',function(e){ e.preventDefault(); zona.classList
 zona.addEventListener('dragleave',function(){ zona.classList.remove('dg'); });
 zona.addEventListener('drop',function(e){ e.preventDefault(); zona.classList.remove('dg'); if(e.dataTransfer.files[0]) setF(e.dataTransfer.files[0]); });
 document.addEventListener('paste',function(e){
-  if($('addWrap').style.display==='none') return;
+  // Solo capturamos pegado de imagen si estamos en la vista de detalle
+  if(!$('sDet').classList.contains('on')) return;
   var its=e.clipboardData&&e.clipboardData.items; if(!its) return;
   for(var i=0;i<its.length;i++){ if(its[i].type.indexOf('image')!==-1){ var bl=its[i].getAsFile(); Object.defineProperty(bl,'name',{value:'captura_'+Date.now()+'.png'}); setF(bl); break; } }
 });
@@ -1519,8 +1772,8 @@ JSON de respuesta (SOLO el JSON, sin explicaciones):
     if(idx2>=0) todosProyectos[idx2]=Object.assign({},todosProyectos[idx2],{documento:doc});
 
     $('lf').classList.remove('on');
-    $('addWrap').style.display='none';
     rmFile(); $('nota').value=''; chk();
+    renderResumen();
     renderDoc();
     showToast('✓ Documento actualizado');
 
@@ -1529,7 +1782,6 @@ JSON de respuesta (SOLO el JSON, sin explicaciones):
       setTimeout(function(){
         showToast('💬 La IA tiene una pregunta — mira abajo','info');
         $('nota').placeholder=doc.pregunta;
-        toggleAdd(true);
         $('addWrap').scrollIntoView({behavior:'smooth'});
       },800);
     }
