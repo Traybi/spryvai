@@ -290,6 +290,95 @@
 
     @keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
     @media(max-width:600px){.doc-inner{padding:28px 22px;}.doc-portada-titulo{font-size:22px;}.hdr{padding:0 16px;}.pg{padding:24px 16px 60px;}}
+
+    /* ── LAYOUT PROYECTOS (lista + calendario) ── */
+    .pg-proy{max-width:1140px;margin:0 auto;padding:36px 24px 80px;}
+    .proy-layout{display:grid;grid-template-columns:1fr 290px;gap:24px;align-items:start;}
+    @media(max-width:900px){.proy-layout{grid-template-columns:1fr;}.pg-proy{padding:24px 16px 60px;}}
+
+    /* ── BUSCADOR ── */
+    .search-wrap{position:relative;margin-bottom:16px;}
+    .search-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px 10px 36px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+    .search-input:focus{border-color:var(--g);}
+    .search-input::placeholder{color:#555;}
+    .search-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#555;pointer-events:none;}
+
+    /* ── TOGGLE COMPLETADOS ── */
+    .toggle-comp{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:#666;cursor:pointer;user-select:none;padding:4px 10px;border-radius:20px;border:1px solid var(--border);transition:all .2s;background:none;font-family:'DM Sans',sans-serif;}
+    .toggle-comp:hover{border-color:#555;color:#ccc;}
+    .toggle-comp.on{border-color:var(--g);color:var(--g);background:rgba(134,188,37,.06);}
+
+    /* ── KEBAB MENU EN TARJETAS ── */
+    .pcard-menu-wrap{position:relative;flex-shrink:0;}
+    .pcard-menu-btn{background:none;border:none;color:#555;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:all .15s;font-family:'Syne',sans-serif;line-height:1;}
+    .pcard-menu-btn:hover{background:rgba(255,255,255,.06);color:#ccc;}
+    .pcard-menu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:#222;border:1px solid #333;border-radius:10px;padding:5px;min-width:180px;z-index:25;animation:fu .15s ease;box-shadow:0 6px 24px rgba(0,0,0,.45);}
+    .pcard-menu.on{display:block;}
+    .pcard-mi{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;color:#aaa;transition:all .15s;}
+    .pcard-mi:hover{background:rgba(134,188,37,.07);color:white;}
+    .pcard-mi.danger:hover{background:rgba(255,100,100,.08);color:#ff6b6b;}
+    .pcard-mi-ico{font-size:13px;width:18px;text-align:center;}
+
+    /* ── ESTADOS DE TARJETA ── */
+    .pcard.pinned{border-color:rgba(134,188,37,.35);background:linear-gradient(180deg,rgba(134,188,37,.04),var(--card));}
+    .pcard-pin-ico{font-size:11px;color:var(--g);margin-right:2px;}
+    .pcard.completed{opacity:.55;}
+    .pcard.completed .pcard-nom{text-decoration:line-through;text-decoration-color:#555;}
+
+    /* ── MINI CALENDARIO ── */
+    .cal-side{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;position:sticky;top:76px;}
+    .cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .cal-tit{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:white;text-transform:capitalize;}
+    .cal-nav{display:flex;gap:4px;}
+    .cal-nav-btn{background:none;border:1px solid var(--border);border-radius:6px;width:22px;height:22px;color:#888;cursor:pointer;font-size:10px;transition:all .15s;display:flex;align-items:center;justify-content:center;line-height:1;}
+    .cal-nav-btn:hover{border-color:var(--g);color:var(--g);}
+    .cal-weekdays,.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .cal-weekdays{margin-bottom:4px;}
+    .cal-wd{text-align:center;font-size:9px;font-weight:600;color:#555;text-transform:uppercase;padding:3px 0;}
+    .cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:#777;border-radius:6px;position:relative;transition:background .15s;border:1px solid transparent;}
+    .cal-day.empty{visibility:hidden;}
+    .cal-day.has-proy{color:white;cursor:pointer;}
+    .cal-day.has-proy:hover{background:rgba(255,255,255,.06);}
+    .cal-day.today{border-color:var(--g);color:var(--g);font-weight:700;}
+    .cal-day-num{line-height:1;}
+    .cal-day-dots{display:flex;gap:2px;margin-top:2px;height:4px;align-items:center;justify-content:center;}
+    .cal-dot{width:4px;height:4px;border-radius:50%;}
+    .cal-dot.work{background:var(--g);}
+    .cal-dot.personal{background:var(--red);}
+
+    .cal-tooltip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:7px 10px;min-width:140px;max-width:220px;z-index:30;display:none;animation:fu .12s ease;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.55);}
+    .cal-day.has-proy:hover .cal-tooltip{display:block;}
+    .cal-tip-fecha{font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;font-weight:600;}
+    .cal-tip-item{font-size:11px;color:#ddd;padding:2px 0;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .cal-tip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+    .cal-tip-dot.work{background:var(--g);}.cal-tip-dot.personal{background:var(--red);}
+
+    .cal-expand{margin-top:10px;text-align:center;font-size:11px;color:#666;cursor:pointer;padding:7px;border-top:1px solid var(--border);transition:color .2s;}
+    .cal-expand:hover{color:var(--g);}
+    .cal-empty-msg{font-size:11px;color:#555;text-align:center;padding:10px 0 2px;font-style:italic;}
+
+    /* ── CALENDARIO GRANDE (modal) ── */
+    .cal-big-box{max-width:820px!important;width:100%;}
+    .cal-big-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .cal-big-tit{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:white;text-transform:capitalize;}
+    .cal-big-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+    .cal-big-wd{text-align:center;font-size:10px;font-weight:600;color:#666;text-transform:uppercase;padding:5px 0;}
+    .cal-big-day{min-height:88px;background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:3px;overflow:hidden;}
+    .cal-big-day.empty{visibility:hidden;}
+    .cal-big-day.today{border-color:var(--g);background:rgba(134,188,37,.04);}
+    .cal-big-day-num{font-size:11px;color:#666;font-weight:600;line-height:1;margin-bottom:2px;}
+    .cal-big-day.today .cal-big-day-num{color:var(--g);}
+    .cal-big-proy{font-size:10px;padding:3px 6px;border-radius:4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;transition:filter .15s;}
+    .cal-big-proy:hover{filter:brightness(1.3);}
+    .cal-big-proy.work{background:rgba(134,188,37,.16);border-left:2px solid var(--g);color:#cfe89a;}
+    .cal-big-proy.personal{background:rgba(224,85,85,.16);border-left:2px solid var(--red);color:#f0a5a5;}
+    @media(max-width:600px){.cal-big-day{min-height:60px;padding:4px;}.cal-big-proy{font-size:9px;padding:2px 4px;}}
+
+    /* ── CONFIRMACIÓN ── */
+    .confirm-msg{font-size:13px;color:#aaa;line-height:1.6;margin-bottom:8px;}
+    .confirm-msg strong{color:white;}
+    .btn-danger{padding:10px 20px;background:var(--red);color:white;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;border:none;border-radius:8px;cursor:pointer;transition:all .2s;}
+    .btn-danger:hover{background:var(--red2);}
   </style>
 </head>
 <body>
@@ -374,18 +463,46 @@
 
 <!-- PROYECTOS -->
 <div class="screen" id="sP">
-  <div class="pg">
+  <div class="pg-proy">
     <div class="pg-hdr">
       <div class="pg-tit">Mis ideas</div>
       <button class="btn-nuevo" onclick="abrirNuevo()">+ Nueva idea</button>
     </div>
-    <!-- Filtros -->
-    <div class="filter-row">
-      <button class="ftab on-all" id="ftAll"      onclick="setFiltro('all',this)">🗂 Todas</button>
-      <button class="ftab"        id="ftWork"     onclick="setFiltro('Trabajo',this)">💼 Trabajo</button>
-      <button class="ftab"        id="ftPersonal" onclick="setFiltro('Personal',this)">🏠 Personal</button>
+
+    <div class="proy-layout">
+      <!-- Columna izquierda: buscador, filtros, lista -->
+      <div>
+        <div class="search-wrap">
+          <span class="search-ico">🔍</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="Buscar ideas por título o descripción..." oninput="onSearch()"/>
+        </div>
+        <div class="filter-row">
+          <button class="ftab on-all" id="ftAll"      onclick="setFiltro('all',this)">🗂 Todas</button>
+          <button class="ftab"        id="ftWork"     onclick="setFiltro('Trabajo',this)">💼 Trabajo</button>
+          <button class="ftab"        id="ftPersonal" onclick="setFiltro('Personal',this)">🏠 Personal</button>
+          <button class="toggle-comp" id="toggleComp" onclick="toggleCompletados()">☐ Mostrar completadas</button>
+        </div>
+        <div id="proyWrap"><div style="text-align:center;padding:60px 0;"><div class="spin" style="margin:0 auto;"></div></div></div>
+      </div>
+
+      <!-- Columna derecha: mini-calendario -->
+      <div class="cal-side" id="calSide">
+        <div class="cal-hdr">
+          <div class="cal-tit" id="calTit">—</div>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calMes(-1)">‹</button>
+            <button class="cal-nav-btn" onclick="calHoy()" title="Hoy">•</button>
+            <button class="cal-nav-btn" onclick="calMes(1)">›</button>
+          </div>
+        </div>
+        <div class="cal-weekdays">
+          <div class="cal-wd">L</div><div class="cal-wd">M</div><div class="cal-wd">X</div>
+          <div class="cal-wd">J</div><div class="cal-wd">V</div><div class="cal-wd">S</div><div class="cal-wd">D</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-expand" onclick="abrirCalGrande()">Ver calendario completo →</div>
+      </div>
     </div>
-    <div id="proyWrap"><div style="text-align:center;padding:60px 0;"><div class="spin" style="margin:0 auto;"></div></div></div>
   </div>
 </div>
 
@@ -496,6 +613,50 @@
   </div>
 </div>
 
+<!-- MODAL RENOMBRAR -->
+<div class="modal-ov" id="mRename">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-tit">Renombrar idea</div>
+    <div class="mfield"><label>Nuevo título</label><input type="text" id="renameInput" placeholder="Título de la idea" onkeydown="if(event.key==='Enter')confirmarRenombrar()"/></div>
+    <div class="modal-row">
+      <button class="btn-cancel" onclick="cModal('mRename')">Cancelar</button>
+      <button class="btn-ok" onclick="confirmarRenombrar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-ov" id="mDelete">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-tit">¿Eliminar idea?</div>
+    <p class="confirm-msg">Vas a eliminar <strong id="delNom"></strong>. Esta acción <strong>no se puede deshacer</strong>.</p>
+    <div class="modal-row">
+      <button class="btn-cancel" onclick="cModal('mDelete')">Cancelar</button>
+      <button class="btn-danger" onclick="confirmarEliminar()">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CALENDARIO GRANDE -->
+<div class="modal-ov" id="mCalBig">
+  <div class="modal-box cal-big-box">
+    <div class="cal-big-hdr">
+      <div class="cal-big-tit" id="calBigTit">—</div>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calMes(-1,true)">‹</button>
+        <button class="cal-nav-btn" onclick="calHoy(true)" title="Hoy">•</button>
+        <button class="cal-nav-btn" onclick="calMes(1,true)">›</button>
+        <button class="cal-nav-btn" onclick="cModal('mCalBig')" style="margin-left:8px;width:auto;padding:0 8px;">✕</button>
+      </div>
+    </div>
+    <div class="cal-big-grid">
+      <div class="cal-big-wd">Lun</div><div class="cal-big-wd">Mar</div><div class="cal-big-wd">Mié</div>
+      <div class="cal-big-wd">Jue</div><div class="cal-big-wd">Vie</div><div class="cal-big-wd">Sáb</div><div class="cal-big-wd">Dom</div>
+    </div>
+    <div class="cal-big-grid" id="calBigGrid" style="margin-top:4px;"></div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div class="lf" id="lf">
   <canvas class="lf-canvas" id="lfCanvas"></canvas>
@@ -530,6 +691,16 @@ var todosProyectos = [];     // cache local
 var filtroActivo = 'all';    // 'all' | 'Trabajo' | 'Personal'
 var mergeNuevoData = null;   // datos de nueva idea pendiente de merge
 var mergeResolve  = null;    // callback de resolución merge
+var searchQuery = '';        // texto del buscador
+var verCompletadas = false;  // toggle mostrar completadas
+var calFecha = new Date();   // mes mostrado en el mini-calendario
+var calBigFecha = new Date();// mes mostrado en el calendario grande
+var renameId = '', deleteId = ''; // id del proyecto pendiente de renombrar/borrar
+
+// Helper para acortar document.getElementById
+function $(id){ return document.getElementById(id); }
+// Quita la clase 'on' de varias pantallas a la vez
+function ocultar(ids){ ids.forEach(function(id){ $(id).classList.remove('on'); }); }
 
 var icE = {jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',webp:'🖼️',pdf:'📕',ppt:'📊',pptx:'📊',doc:'📝',docx:'📝',txt:'📄',mp4:'🎬',mp3:'🎵',zip:'📦',rar:'📦',csv:'📊',xls:'📊',xlsx:'📊'};
 
@@ -552,97 +723,97 @@ async function init(){
 async function postLogin(){
   var r = await sb.from('profiles').select('nombre').eq('id',cu.id).single();
   var nom = r.data ? r.data.nombre : cu.email.split('@')[0];
-  document.getElementById('userName').textContent = nom;
-  document.getElementById('userAv').textContent   = nom.charAt(0).toUpperCase();
-  document.getElementById('hdr').style.display = 'flex';
-  ['sAuth','sPin'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
+  $('userName').textContent = nom;
+  $('userAv').textContent   = nom.charAt(0).toUpperCase();
+  $('hdr').style.display = 'flex';
+  ocultar(['sAuth','sPin']);
   ir('p');
 }
 function mostrarAuth(){
-  document.getElementById('hdr').style.display='none';
-  ['sP','sDet','sPin'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
-  document.getElementById('sAuth').classList.add('on');
+  $('hdr').style.display='none';
+  ocultar(['sP','sDet','sPin']);
+  $('sAuth').classList.add('on');
 }
 function mostrarPin(){
   sb.from('profiles').select('nombre').eq('id',cu.id).single().then(function(r){
     var nom = r.data ? r.data.nombre : cu.email.split('@')[0];
-    document.getElementById('pinUser').textContent='Hola, '+nom;
+    $('pinUser').textContent='Hola, '+nom;
   });
-  ['sAuth','sP','sDet'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
-  document.getElementById('hdr').style.display='none';
-  document.getElementById('sPin').classList.add('on');
+  ocultar(['sAuth','sP','sDet']);
+  $('hdr').style.display='none';
+  $('sPin').classList.add('on');
   pinBuffer=''; updateDots();
 }
 
 // ─── AUTH ───────────────────────────────────────────
 function switchTab(t){
-  document.getElementById('fLogin').style.display = t==='login'?'block':'none';
-  document.getElementById('fReg').style.display   = t==='reg'?'block':'none';
-  document.getElementById('tabLogin').classList.toggle('on',t==='login');
-  document.getElementById('tabReg').classList.toggle('on',t==='reg');
-  document.getElementById('authErr').textContent='';
-  document.getElementById('authErr').className='auth-err';
+  $('fLogin').style.display = t==='login'?'block':'none';
+  $('fReg').style.display   = t==='reg'?'block':'none';
+  $('tabLogin').classList.toggle('on',t==='login');
+  $('tabReg').classList.toggle('on',t==='reg');
+  $('authErr').textContent='';
+  $('authErr').className='auth-err';
 }
 async function login(){
-  var email=document.getElementById('lEmail').value.trim();
-  var pass=document.getElementById('lPass').value;
+  var email=$('lEmail').value.trim();
+  var pass=$('lPass').value;
   if(!email||!pass){ setAE('Rellena todos los campos.'); return; }
   if(!esDeloitte(email)){ setAE('Solo se permiten cuentas @deloitte.*'); return; }
-  document.getElementById('btnLogin').disabled=true;
+  $('btnLogin').disabled=true;
   var r=await sb.auth.signInWithPassword({email,password:pass});
-  document.getElementById('btnLogin').disabled=false;
+  $('btnLogin').disabled=false;
   if(r.error){ setAE(r.error.message==='Invalid login credentials'?'Email o contraseña incorrectos.':r.error.message); return; }
   cu=r.data.user; if(getPin()) mostrarPin(); else await postLogin();
 }
 async function register(){
-  var nom=document.getElementById('rNom').value.trim();
-  var email=document.getElementById('rEmail').value.trim();
-  var pass=document.getElementById('rPass').value;
-  var pin=document.getElementById('rPin').value.trim();
+  var nom=$('rNom').value.trim();
+  var email=$('rEmail').value.trim();
+  var pass=$('rPass').value;
+  var pin=$('rPin').value.trim();
   if(!nom||!email||!pass){ setAE('Rellena nombre, email y contraseña.'); return; }
   if(!esDeloitte(email)){ setAE('Solo se permiten cuentas @deloitte.*'); return; }
   if(pass.length<6){ setAE('La contraseña debe tener al menos 6 caracteres.'); return; }
   if(pin && (pin.length!==4||!/^\d{4}$/.test(pin))){ setAE('El PIN debe ser exactamente 4 dígitos.'); return; }
-  document.getElementById('btnRegister').disabled=true;
+  $('btnRegister').disabled=true;
   var r=await sb.auth.signUp({email,password:pass,options:{data:{nombre:nom}}});
-  document.getElementById('btnRegister').disabled=false;
+  $('btnRegister').disabled=false;
   if(r.error){ setAE(r.error.message); return; }
   if(pin) setPin(pin);
   setAE('¡Cuenta creada! Inicia sesión para entrar.',true);
   setTimeout(function(){ switchTab('login'); },2000);
 }
-function setAE(msg,ok){ var el=document.getElementById('authErr'); el.textContent=msg; el.className='auth-err '+(ok?'ok':'err'); }
+function setAE(msg,ok){ var el=$('authErr'); el.textContent=msg; el.className='auth-err '+(ok?'ok':'err'); }
 async function logout(){ clearPin(); await sb.auth.signOut(); }
 
 // ─── PIN ────────────────────────────────────────────
 function pinInput(d){ if(pinBuffer.length>=4)return; pinBuffer+=d; updateDots(); if(pinBuffer.length===4)verificarPin(); }
-function pinDel(){ pinBuffer=pinBuffer.slice(0,-1); updateDots(); document.getElementById('pinErr').textContent=''; }
-function updateDots(){ for(var i=0;i<4;i++) document.getElementById('pd'+i).classList.toggle('filled',i<pinBuffer.length); }
+function pinDel(){ pinBuffer=pinBuffer.slice(0,-1); updateDots(); $('pinErr').textContent=''; }
+function updateDots(){ for(var i=0;i<4;i++) $('pd'+i).classList.toggle('filled',i<pinBuffer.length); }
 async function verificarPin(){
-  if(pinBuffer===getPin()){ document.getElementById('pinErr').textContent=''; await postLogin(); }
-  else{ document.getElementById('pinErr').textContent='PIN incorrecto. Inténtalo de nuevo.'; pinBuffer=''; setTimeout(updateDots,400); }
+  if(pinBuffer===getPin()){ $('pinErr').textContent=''; await postLogin(); }
+  else{ $('pinErr').textContent='PIN incorrecto. Inténtalo de nuevo.'; pinBuffer=''; setTimeout(updateDots,400); }
 }
 document.addEventListener('keydown',function(e){
-  if(!document.getElementById('sPin').classList.contains('on')) return;
+  if(!$('sPin').classList.contains('on')) return;
   if(e.key>='0'&&e.key<='9') pinInput(e.key);
   else if(e.key==='Backspace') pinDel();
 });
 
 // ─── NAV ────────────────────────────────────────────
 function ir(v){
-  ['sP','sDet'].forEach(function(id){ document.getElementById(id).classList.remove('on'); });
-  document.getElementById('exportMenu').classList.remove('on');
-  if(v==='p'){ document.getElementById('sP').classList.add('on'); cargarP(); }
-  else if(v==='d'){ document.getElementById('sDet').classList.add('on'); renderDet(); }
+  ocultar(['sP','sDet']);
+  $('exportMenu').classList.remove('on');
+  if(v==='p'){ $('sP').classList.add('on'); cargarP(); }
+  else if(v==='d'){ $('sDet').classList.add('on'); renderDet(); }
 }
 
 // ─── FILTRO ─────────────────────────────────────────
 function setFiltro(f, btn){
   filtroActivo = f;
   // reset all tabs
-  document.getElementById('ftAll').className='ftab';
-  document.getElementById('ftWork').className='ftab';
-  document.getElementById('ftPersonal').className='ftab';
+  $('ftAll').className='ftab';
+  $('ftWork').className='ftab';
+  $('ftPersonal').className='ftab';
   if(f==='all')       btn.className='ftab on-all';
   else if(f==='Trabajo')  btn.className='ftab on-work';
   else if(f==='Personal') btn.className='ftab on-personal';
@@ -651,7 +822,7 @@ function setFiltro(f, btn){
 
 // ─── PROYECTOS ───────────────────────────────────────
 async function cargarP(){
-  var wrap=document.getElementById('proyWrap');
+  var wrap=$('proyWrap');
   wrap.innerHTML='<div style="text-align:center;padding:60px 0;"><div class="spin" style="margin:0 auto;"></div></div>';
   var r1=await sb.from('proyectos').select('*').eq('creador_id',cu.id).order('created_at',{ascending:false});
   var creados=r1.data||[];
@@ -664,39 +835,310 @@ async function cargarP(){
 }
 
 function renderProyectos(){
-  var wrap=document.getElementById('proyWrap');
+  var wrap=$('proyWrap');
+
+  // 1. Filtrado por tag (Trabajo/Personal/Todas)
   var lista = filtroActivo==='all'
-    ? todosProyectos
+    ? todosProyectos.slice()
     : todosProyectos.filter(function(p){ return p.tag===filtroActivo; });
 
+  // 2. Filtrado por estado completado
+  if(!verCompletadas) lista = lista.filter(function(p){ return !p.completado; });
+
+  // 3. Filtrado por buscador
+  if(searchQuery){
+    var q = searchQuery.toLowerCase();
+    lista = lista.filter(function(p){
+      return (p.nombre||'').toLowerCase().includes(q)
+          || (p.descripcion||'').toLowerCase().includes(q);
+    });
+  }
+
+  // 4. Ordenar: anclados arriba, completados al final, resto por created_at
+  lista.sort(function(a,b){
+    if(!!b.anclado - !!a.anclado) return !!b.anclado - !!a.anclado;
+    if(!!a.completado - !!b.completado) return !!a.completado - !!b.completado;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+
+  // 5. Render
   if(!lista.length){
-    wrap.innerHTML='<div class="plist-empty"><div class="plist-empty-ico">'+(filtroActivo==='all'?'📁':filtroActivo==='Trabajo'?'💼':'🏠')+'</div><p>'+(todosProyectos.length===0?'No tienes ideas aún.<br>Crea la primera.':'No hay ideas en esta categoría.')+'</p></div>';
+    var icono = filtroActivo==='all'?'📁':filtroActivo==='Trabajo'?'💼':'🏠';
+    var msg   = searchQuery ? 'Ninguna idea coincide con tu búsqueda.'
+              : todosProyectos.length===0 ? 'No tienes ideas aún.<br>Crea la primera.'
+              : 'No hay ideas en esta categoría.';
+    wrap.innerHTML='<div class="plist-empty"><div class="plist-empty-ico">'+icono+'</div><p>'+msg+'</p></div>';
+    renderCalendario();
     return;
   }
 
   var html='<div class="proy-lista">';
-  lista.forEach(function(p){
-    var isWork = p.tag==='Trabajo';
-    var badge='';
-    if(p.fecha_limite){
-      var diff=Math.ceil((new Date(p.fecha_limite)-new Date())/864e5);
-      if(diff<0) badge='<span class="fb fb-late">Vencido</span>';
-      else if(diff<=7) badge='<span class="fb fb-warn">'+diff+'d</span>';
-      else badge='<span class="fb fb-ok">'+new Date(p.fecha_limite).toLocaleDateString('es-ES')+'</span>';
-    }
-    var esMio = p.creador_id===cu.id;
-    var tagCls = isWork ? 'work' : 'personal';
-    var tagTxt = isWork ? '💼 Trabajo' : '🏠 Personal';
-    html+='<div class="pcard '+(isWork?'work':'personal')+'" onclick="abrirP(\''+p.id+'\')">';
-    html+='<div class="pcard-left">';
-    html+='<div class="pcard-top"><span class="pcard-nom">'+esc(p.nombre)+'</span>';
-    html+='<span class="ptag '+tagCls+'">'+tagTxt+'</span>';
-    if(!esMio) html+='<span class="ptag ptag-inv">Invitado</span>';
-    html+='</div>';
-    html+='<div class="pcard-desc">'+esc(p.descripcion||'Sin descripción')+'</div>';
-    html+='</div>'+badge+'<span class="pcard-arr">→</span></div>';
+  lista.forEach(function(p){ html += pcardHtml(p); });
+  wrap.innerHTML = html + '</div>';
+
+  // Re-pintar calendario con los datos actualizados
+  renderCalendario();
+}
+
+// Genera el HTML de una tarjeta de proyecto
+function pcardHtml(p){
+  var isWork = p.tag==='Trabajo';
+  var esMio  = p.creador_id===cu.id;
+  var tagCls = isWork ? 'work' : 'personal';
+  var tagTxt = isWork ? '💼 Trabajo' : '🏠 Personal';
+
+  // Badge de fecha
+  var badge='';
+  if(p.fecha_limite){
+    var diff=Math.ceil((new Date(p.fecha_limite)-new Date())/864e5);
+    if(diff<0) badge='<span class="fb fb-late">Vencido</span>';
+    else if(diff<=7) badge='<span class="fb fb-warn">'+diff+'d</span>';
+    else badge='<span class="fb fb-ok">'+new Date(p.fecha_limite).toLocaleDateString('es-ES')+'</span>';
+  }
+
+  // Clases de estado
+  var cls = 'pcard '+tagCls;
+  if(p.anclado)    cls += ' pinned';
+  if(p.completado) cls += ' completed';
+
+  // Menú kebab (solo si soy el creador)
+  var menu='';
+  if(esMio){
+    var pinTxt  = p.anclado    ? '📍 Desanclar'     : '📌 Anclar';
+    var compTxt = p.completado ? '↩️ Reactivar'     : '✓ Marcar completada';
+    menu  = '<div class="pcard-menu-wrap" onclick="event.stopPropagation();">';
+    menu += '<button class="pcard-menu-btn" onclick="togglePcardMenu(event,\''+p.id+'\')">⋮</button>';
+    menu += '<div class="pcard-menu" id="menu-'+p.id+'">';
+    menu += '<div class="pcard-mi" onclick="abrirRenombrar(\''+p.id+'\')"><span class="pcard-mi-ico">✏️</span>Renombrar</div>';
+    menu += '<div class="pcard-mi" onclick="togglePin(\''+p.id+'\')"><span class="pcard-mi-ico"></span>'+pinTxt+'</div>';
+    menu += '<div class="pcard-mi" onclick="toggleCompletado(\''+p.id+'\')"><span class="pcard-mi-ico"></span>'+compTxt+'</div>';
+    menu += '<div class="pcard-mi danger" onclick="abrirEliminar(\''+p.id+'\')"><span class="pcard-mi-ico">🗑️</span>Eliminar</div>';
+    menu += '</div></div>';
+  }
+
+  var pinIco = p.anclado ? '<span class="pcard-pin-ico">📌</span>' : '';
+  var html='';
+  html+='<div class="'+cls+'" onclick="abrirP(\''+p.id+'\')">';
+  html+=  '<div class="pcard-left">';
+  html+=    '<div class="pcard-top">'+pinIco+'<span class="pcard-nom">'+esc(p.nombre)+'</span>';
+  html+=      '<span class="ptag '+tagCls+'">'+tagTxt+'</span>';
+  if(!esMio) html+='<span class="ptag ptag-inv">Invitado</span>';
+  html+=    '</div>';
+  html+=    '<div class="pcard-desc">'+esc(p.descripcion||'Sin descripción')+'</div>';
+  html+=  '</div>';
+  html+=  badge + menu + '<span class="pcard-arr">→</span>';
+  html+='</div>';
+  return html;
+}
+
+// ─── ACCIONES SOBRE PROYECTOS (kebab) ────────────────
+function togglePcardMenu(ev, id){
+  ev.stopPropagation();
+  // Cerrar otros menús abiertos
+  document.querySelectorAll('.pcard-menu.on').forEach(function(m){
+    if(m.id !== 'menu-'+id) m.classList.remove('on');
   });
-  wrap.innerHTML=html+'</div>';
+  $('menu-'+id).classList.toggle('on');
+}
+// Cerrar menús al clicar fuera
+document.addEventListener('click', function(){
+  document.querySelectorAll('.pcard-menu.on').forEach(function(m){ m.classList.remove('on'); });
+});
+
+function abrirRenombrar(id){
+  var p = todosProyectos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  renameId = id;
+  $('renameInput').value = p.nombre || '';
+  $('mRename').classList.add('on');
+  setTimeout(function(){ $('renameInput').focus(); $('renameInput').select(); }, 80);
+}
+async function confirmarRenombrar(){
+  var nuevo = $('renameInput').value.trim();
+  if(!nuevo){ showToast('El título no puede estar vacío.', true); return; }
+  var r = await sb.from('proyectos').update({nombre:nuevo}).eq('id',renameId);
+  if(r.error){ showToast('Error: '+r.error.message, true); return; }
+  var p = todosProyectos.find(function(x){ return x.id===renameId; });
+  if(p) p.nombre = nuevo;
+  cModal('mRename');
+  renderProyectos();
+  showToast('✓ Idea renombrada');
+}
+
+async function togglePin(id){
+  var p = todosProyectos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var nuevo = !p.anclado;
+  var r = await sb.from('proyectos').update({anclado:nuevo}).eq('id',id);
+  if(r.error){ showToast('Error: '+r.error.message, true); return; }
+  p.anclado = nuevo;
+  renderProyectos();
+  showToast(nuevo ? '📌 Idea anclada' : 'Idea desanclada');
+}
+
+async function toggleCompletado(id){
+  var p = todosProyectos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  var nuevo = !p.completado;
+  var r = await sb.from('proyectos').update({completado:nuevo}).eq('id',id);
+  if(r.error){ showToast('Error: '+r.error.message, true); return; }
+  p.completado = nuevo;
+  renderProyectos();
+  showToast(nuevo ? '✓ Marcada como completada' : 'Idea reactivada');
+}
+
+function abrirEliminar(id){
+  var p = todosProyectos.find(function(x){ return x.id===id; });
+  if(!p) return;
+  deleteId = id;
+  $('delNom').textContent = '"'+p.nombre+'"';
+  $('mDelete').classList.add('on');
+}
+async function confirmarEliminar(){
+  var id = deleteId;
+  // Borrar miembros primero (FK) y luego el proyecto
+  await sb.from('proyecto_miembros').delete().eq('proyecto_id', id).catch(function(){});
+  await sb.from('proyecto_entradas').delete().eq('proyecto_id', id).catch(function(){});
+  var r = await sb.from('proyectos').delete().eq('id', id);
+  if(r.error){ showToast('Error: '+r.error.message, true); return; }
+  todosProyectos = todosProyectos.filter(function(x){ return x.id!==id; });
+  cModal('mDelete');
+  renderProyectos();
+  showToast('✓ Idea eliminada');
+}
+
+// ─── BUSCADOR / TOGGLES ─────────────────────────────
+function onSearch(){ searchQuery = $('searchInput').value.trim(); renderProyectos(); }
+
+function toggleCompletados(){
+  verCompletadas = !verCompletadas;
+  var btn = $('toggleComp');
+  btn.classList.toggle('on', verCompletadas);
+  btn.textContent = (verCompletadas ? '☑' : '☐')+' Mostrar completadas';
+  renderProyectos();
+}
+
+// ─── CALENDARIO ─────────────────────────────────────
+// Agrupa proyectos por fecha_limite (YYYY-MM-DD → array de proyectos)
+function proyectosPorFecha(){
+  var map = {};
+  todosProyectos.forEach(function(p){
+    if(!p.fecha_limite || p.completado) return;
+    // Normalizar a YYYY-MM-DD (la fecha viene como ISO de Supabase)
+    var key = String(p.fecha_limite).substring(0,10);
+    (map[key] = map[key] || []).push(p);
+  });
+  return map;
+}
+
+// Construye el array de días del mes para una fecha dada
+// Devuelve {titulo, semanas:[[diaObj,...], ...]} donde diaObj = {dia, fechaKey, esHoy, vacio}
+function construirMes(fecha){
+  var año = fecha.getFullYear(), mes = fecha.getMonth();
+  var primero = new Date(año, mes, 1);
+  var ultimo  = new Date(año, mes+1, 0);
+  // Día de la semana del 1: 0=Dom, 1=Lun... → queremos Lun=0
+  var offset = (primero.getDay()+6) % 7;
+  var hoy = new Date(); var hoyKey = isoFecha(hoy);
+  var dias = [];
+  for(var i=0;i<offset;i++) dias.push({vacio:true});
+  for(var d=1; d<=ultimo.getDate(); d++){
+    var f = new Date(año, mes, d);
+    var key = isoFecha(f);
+    dias.push({dia:d, fechaKey:key, esHoy:key===hoyKey});
+  }
+  var titulo = fecha.toLocaleDateString('es-ES', {month:'long', year:'numeric'});
+  return {titulo:titulo, dias:dias};
+}
+
+function isoFecha(f){
+  var y=f.getFullYear(), m=String(f.getMonth()+1).padStart(2,'0'), d=String(f.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+d;
+}
+
+// Render del mini-calendario lateral
+function renderCalendario(){
+  var grid = $('calGrid'); if(!grid) return;
+  var m = construirMes(calFecha);
+  var porFecha = proyectosPorFecha();
+  $('calTit').textContent = m.titulo;
+
+  var html = '';
+  m.dias.forEach(function(d){
+    if(d.vacio){ html += '<div class="cal-day empty"></div>'; return; }
+    var proys = porFecha[d.fechaKey] || [];
+    var cls = 'cal-day';
+    if(d.esHoy) cls += ' today';
+    if(proys.length) cls += ' has-proy';
+
+    // Dots (máx 3 visibles para no saturar)
+    var dots = '';
+    proys.slice(0,3).forEach(function(p){
+      dots += '<span class="cal-dot '+(p.tag==='Trabajo'?'work':'personal')+'"></span>';
+    });
+
+    // Tooltip
+    var tip = '';
+    if(proys.length){
+      tip  = '<div class="cal-tooltip"><div class="cal-tip-fecha">'+formatoFechaCorta(d.fechaKey)+'</div>';
+      proys.forEach(function(p){
+        tip += '<div class="cal-tip-item"><span class="cal-tip-dot '+(p.tag==='Trabajo'?'work':'personal')+'"></span>'+esc(p.nombre)+'</div>';
+      });
+      tip += '</div>';
+    }
+
+    var onclick = proys.length ? ' onclick="abrirP(\''+proys[0].id+'\')"' : '';
+    html += '<div class="'+cls+'"'+onclick+'>';
+    html += '<div class="cal-day-num">'+d.dia+'</div>';
+    html += '<div class="cal-day-dots">'+dots+'</div>';
+    html += tip + '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+function formatoFechaCorta(iso){
+  var p = iso.split('-');
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+function calMes(delta, esGrande){
+  var f = esGrande ? calBigFecha : calFecha;
+  f.setMonth(f.getMonth()+delta);
+  if(esGrande){ calBigFecha = new Date(f); renderCalendarioGrande(); }
+  else        { calFecha    = new Date(f); renderCalendario(); }
+}
+function calHoy(esGrande){
+  if(esGrande){ calBigFecha = new Date(); renderCalendarioGrande(); }
+  else        { calFecha    = new Date(); renderCalendario(); }
+}
+
+function abrirCalGrande(){
+  calBigFecha = new Date(calFecha);
+  $('mCalBig').classList.add('on');
+  renderCalendarioGrande();
+}
+
+// Render del calendario grande dentro del modal
+function renderCalendarioGrande(){
+  var grid = $('calBigGrid'); if(!grid) return;
+  var m = construirMes(calBigFecha);
+  var porFecha = proyectosPorFecha();
+  $('calBigTit').textContent = m.titulo;
+
+  var html = '';
+  m.dias.forEach(function(d){
+    if(d.vacio){ html += '<div class="cal-big-day empty"></div>'; return; }
+    var proys = porFecha[d.fechaKey] || [];
+    var cls = 'cal-big-day' + (d.esHoy?' today':'');
+    html += '<div class="'+cls+'">';
+    html += '<div class="cal-big-day-num">'+d.dia+'</div>';
+    proys.forEach(function(p){
+      var pcls = p.tag==='Trabajo' ? 'work' : 'personal';
+      html += '<div class="cal-big-proy '+pcls+'" onclick="cModal(\'mCalBig\');abrirP(\''+p.id+'\')" title="'+esc(p.nombre)+'">'+esc(p.nombre)+'</div>';
+    });
+    html += '</div>';
+  });
+  grid.innerHTML = html;
 }
 
 async function abrirP(id){
@@ -706,16 +1148,16 @@ async function abrirP(id){
 
 // ─── NUEVA IDEA + DETECCIÓN DE SIMILARES ────────────
 function abrirNuevo(){
-  ['npNom','npDesc','npFecha'].forEach(function(id){ document.getElementById(id).value=''; });
-  document.getElementById('mNuevo').classList.add('on');
-  setTimeout(function(){ document.getElementById('npNom').focus(); },100);
+  ['npNom','npDesc','npFecha'].forEach(function(id){ $(id).value=''; });
+  $('mNuevo').classList.add('on');
+  setTimeout(function(){ $('npNom').focus(); },100);
 }
 
 async function crearProyecto(){
-  var nom=document.getElementById('npNom').value.trim();
-  var desc=document.getElementById('npDesc').value.trim();
-  var tag=document.getElementById('npTag').value;
-  var fecha=document.getElementById('npFecha').value;
+  var nom=$('npNom').value.trim();
+  var desc=$('npDesc').value.trim();
+  var tag=$('npTag').value;
+  var fecha=$('npFecha').value;
   if(!nom){ showToast('El título es obligatorio.',true); return; }
   cModal('mNuevo');
 
@@ -730,7 +1172,7 @@ async function crearProyecto(){
       ir('d');
       setTimeout(function(){
         toggleAdd(true);
-        document.getElementById('nota').value = '💡 Nueva idea relacionada:\n\n'+nom+'\n\n'+(desc||'');
+        $('nota').value = '💡 Nueva idea relacionada:\n\n'+nom+'\n\n'+(desc||'');
         showToast('Idea añadida como material extra. Pulsa "Actualizar con IA".','info');
       },400);
       mergeNuevoData=null;
@@ -740,13 +1182,13 @@ async function crearProyecto(){
   }
 
   // Crear idea nueva
-  document.getElementById('btnCrear').disabled=true;
+  $('btnCrear').disabled=true;
   var r=await sb.from('proyectos').insert({
     nombre:nom, descripcion:desc, tag:tag,
     fecha_limite:fecha||null, creador_id:cu.id,
     documento:null
   }).select().single();
-  document.getElementById('btnCrear').disabled=false;
+  $('btnCrear').disabled=false;
   if(r.error){ showToast('Error: '+r.error.message,true); return; }
   await sb.from('proyecto_miembros').insert({proyecto_id:r.data.id,user_id:cu.id,rol:'creador'}).catch(function(){});
   todosProyectos.unshift(r.data);
@@ -784,10 +1226,10 @@ function mostrarMergeModal(similares){
       html+='<div class="merge-card-sim">'+s.matches+' conceptos en común · '+pct+'% de similitud</div>';
       html+='</div>';
     });
-    document.getElementById('mergeSimilares').innerHTML=html;
+    $('mergeSimilares').innerHTML=html;
     // guardar datos para el merge
     mergeNuevoData = null;
-    document.getElementById('mMerge').classList.add('on');
+    $('mMerge').classList.add('on');
   });
 }
 
@@ -808,8 +1250,8 @@ function mergeContinueNew(){
 // ─── DETALLE ────────────────────────────────────────
 async function renderDet(){
   if(!cp) return;
-  document.getElementById('detNom').textContent=cp.nombre;
-  document.getElementById('detDesc').textContent=cp.descripcion||'';
+  $('detNom').textContent=cp.nombre;
+  $('detDesc').textContent=cp.descripcion||'';
 
   var info='';
   if(cp.tag){
@@ -821,15 +1263,15 @@ async function renderDet(){
     var col=diff<0?'#ff6b6b':diff<=7?'#ffa000':'var(--g)';
     info+='<span class="det-info-item"><strong style="color:'+col+'">Límite: '+new Date(cp.fecha_limite).toLocaleDateString('es-ES')+'</strong></span>';
   }
-  document.getElementById('detInfo').innerHTML=info;
+  $('detInfo').innerHTML=info;
   await renderMiembros();
 
   // Idea original colapsable
   var orig=cp.descripcion||'';
-  var ob=document.getElementById('originalBlock');
+  var ob=$('originalBlock');
   if(orig){
     ob.style.display='block';
-    document.getElementById('originalText').textContent=orig;
+    $('originalText').textContent=orig;
   } else { ob.style.display='none'; }
 
   renderDoc();
@@ -838,7 +1280,7 @@ async function renderDet(){
 // Colapsar / expandir la idea original
 function toggleOriginal(toggle){
   var chev=toggle.querySelector('.original-toggle-chev');
-  var body=document.getElementById('originalBody');
+  var body=$('originalBody');
   var open=body.classList.contains('open');
   if(open){ body.classList.remove('open'); chev.classList.remove('open'); }
   else    { body.classList.add('open');   chev.classList.add('open'); }
@@ -852,11 +1294,11 @@ async function renderMiembros(){
     html+='<div class="mchip"><div class="mav">'+nom.charAt(0).toUpperCase()+'</div><div><div class="mnom">'+esc(nom)+'</div><div class="mrol">'+esc(m.rol)+'</div></div></div>';
   });
   if(cp.creador_id===cu.id) html+='<button class="btn-invite" onclick="abrirInvite()">+ Invitar</button>';
-  document.getElementById('miembrosRow').innerHTML=html;
+  $('miembrosRow').innerHTML=html;
 }
-function abrirInvite(){ document.getElementById('invQ').value=''; document.getElementById('uRes').innerHTML=''; document.getElementById('mInvite').classList.add('on'); }
+function abrirInvite(){ $('invQ').value=''; $('uRes').innerHTML=''; $('mInvite').classList.add('on'); }
 async function buscarU(){
-  var q=document.getElementById('invQ').value.trim(); var res=document.getElementById('uRes');
+  var q=$('invQ').value.trim(); var res=$('uRes');
   if(q.length<2){ res.innerHTML=''; return; }
   var r=await sb.from('profiles').select('id,nombre,email').or('nombre.ilike.%'+q+'%,email.ilike.%'+q+'%').neq('id',cu.id).limit(8);
   if(!r.data||!r.data.length){ res.innerHTML='<div style="font-size:12px;color:#555;padding:10px 0;">Sin resultados</div>'; return; }
@@ -873,7 +1315,7 @@ async function invitar(uid,nom){
 
 // ─── DOCUMENTO ──────────────────────────────────────
 function renderDoc(){
-  var inner=document.getElementById('docInner');
+  var inner=$('docInner');
   if(!cp.documento){
     inner.innerHTML='<div class="doc-empty"><div class="doc-empty-ico">💡</div><p>La IA aún no ha elaborado esta idea.</p><p style="margin-top:6px;font-size:12px;">Pulsa <strong style="color:var(--g)">+ Añadir material</strong> para empezar.</p></div>';
     return;
@@ -930,7 +1372,7 @@ function renderDoc(){
   }
 
   inner.innerHTML=html;
-  if(nuevoSecId) setTimeout(function(){ var el=document.getElementById(nuevoSecId); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); },350);
+  if(nuevoSecId) setTimeout(function(){ var el=$(nuevoSecId); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); },350);
 }
 
 // Convierte el texto plano en HTML con párrafos y links clickables
@@ -946,11 +1388,11 @@ function renderContenidoIA(txt){
   }).join('');
 }
 
-function scrollS(id){ var el=document.getElementById(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+function scrollS(id){ var el=$(id); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 
 // ─── AÑADIR MATERIAL ────────────────────────────────
 function toggleAdd(forceOpen){
-  var w=document.getElementById('addWrap');
+  var w=$('addWrap');
   var shouldOpen = forceOpen===true ? true : w.style.display==='none';
   w.style.display=shouldOpen?'block':'none';
   if(shouldOpen) setTimeout(function(){ w.scrollIntoView({behavior:'smooth',block:'start'}); },80);
@@ -959,39 +1401,39 @@ function toggleAdd(forceOpen){
 function setF(f){
   if(!f) return; fObj=f;
   var ext=(f.name||'').split('.').pop().toLowerCase();
-  document.getElementById('fci').textContent=icE[ext]||'📎';
-  document.getElementById('fcn').textContent=f.name||'archivo';
-  document.getElementById('fc').classList.add('on');
-  document.getElementById('zona').style.display='none';
+  $('fci').textContent=icE[ext]||'📎';
+  $('fcn').textContent=f.name||'archivo';
+  $('fc').classList.add('on');
+  $('zona').style.display='none';
   var r=new FileReader();
   r.onload=function(e){ b64=e.target.result.split(',')[1]; mime=f.type||'application/octet-stream'; };
   r.readAsDataURL(f); chk();
 }
-function rmFile(){ fObj=null;b64='';document.getElementById('fc').classList.remove('on');document.getElementById('zona').style.display='block';document.getElementById('fi').value='';chk(); }
-function chk(){ document.getElementById('ba').disabled=!fObj&&!document.getElementById('nota').value.trim(); }
+function rmFile(){ fObj=null;b64='';$('fc').classList.remove('on');$('zona').style.display='block';$('fi').value='';chk(); }
+function chk(){ $('ba').disabled=!fObj&&!$('nota').value.trim(); }
 
-document.getElementById('nota').addEventListener('input',chk);
-document.getElementById('fi').onchange=function(){ setF(this.files[0]); };
-var zona=document.getElementById('zona');
+$('nota').addEventListener('input',chk);
+$('fi').onchange=function(){ setF(this.files[0]); };
+var zona=$('zona');
 zona.addEventListener('dragover',function(e){ e.preventDefault(); zona.classList.add('dg'); });
 zona.addEventListener('dragleave',function(){ zona.classList.remove('dg'); });
 zona.addEventListener('drop',function(e){ e.preventDefault(); zona.classList.remove('dg'); if(e.dataTransfer.files[0]) setF(e.dataTransfer.files[0]); });
 document.addEventListener('paste',function(e){
-  if(document.getElementById('addWrap').style.display==='none') return;
+  if($('addWrap').style.display==='none') return;
   var its=e.clipboardData&&e.clipboardData.items; if(!its) return;
   for(var i=0;i<its.length;i++){ if(its[i].type.indexOf('image')!==-1){ var bl=its[i].getAsFile(); Object.defineProperty(bl,'name',{value:'captura_'+Date.now()+'.png'}); setF(bl); break; } }
 });
 
 // ─── ANALIZAR CON IA ─────────────────────────────────
 async function analizar(){
-  var nota=document.getElementById('nota').value;
+  var nota=$('nota').value;
   if(!fObj&&!nota.trim()){ showToast('Escribe algo o adjunta un archivo.',true); return; }
 
-  document.getElementById('lfs').textContent='→ '+cp.nombre;
-  document.getElementById('lf').classList.add('on');
+  $('lfs').textContent='→ '+cp.nombre;
+  $('lf').classList.add('on');
   var ms=['Analizando el material...','Estructurando el documento...','Redactando secciones...','Buscando referencias...','Casi listo...'];
   var idx=0;
-  var iv=setInterval(function(){ idx++; if(idx<ms.length) document.getElementById('lfm').textContent=ms[idx]; },2200);
+  var iv=setInterval(function(){ idx++; if(idx<ms.length) $('lfm').textContent=ms[idx]; },2200);
 
   var archivoUrl='';
   if(fObj){
@@ -1076,9 +1518,9 @@ JSON de respuesta (SOLO el JSON, sin explicaciones):
     var idx2=todosProyectos.findIndex(function(p){ return p.id===cp.id; });
     if(idx2>=0) todosProyectos[idx2]=Object.assign({},todosProyectos[idx2],{documento:doc});
 
-    document.getElementById('lf').classList.remove('on');
-    document.getElementById('addWrap').style.display='none';
-    rmFile(); document.getElementById('nota').value=''; chk();
+    $('lf').classList.remove('on');
+    $('addWrap').style.display='none';
+    rmFile(); $('nota').value=''; chk();
     renderDoc();
     showToast('✓ Documento actualizado');
 
@@ -1086,22 +1528,22 @@ JSON de respuesta (SOLO el JSON, sin explicaciones):
     if(doc.pregunta){
       setTimeout(function(){
         showToast('💬 La IA tiene una pregunta — mira abajo','info');
-        document.getElementById('nota').placeholder=doc.pregunta;
+        $('nota').placeholder=doc.pregunta;
         toggleAdd(true);
-        document.getElementById('addWrap').scrollIntoView({behavior:'smooth'});
+        $('addWrap').scrollIntoView({behavior:'smooth'});
       },800);
     }
   })
   .catch(function(err){
     clearInterval(iv);
-    document.getElementById('lf').classList.remove('on');
+    $('lf').classList.remove('on');
     showToast('Error: '+err.message,true);
   });
 }
 
 // ─── EXPORTAR ───────────────────────────────────────
-function toggleExportMenu(){ document.getElementById('exportMenu').classList.toggle('on'); }
-document.addEventListener('click',function(e){ if(!e.target.closest('.export-wrap')) document.getElementById('exportMenu').classList.remove('on'); });
+function toggleExportMenu(){ $('exportMenu').classList.toggle('on'); }
+document.addEventListener('click',function(e){ if(!e.target.closest('.export-wrap')) $('exportMenu').classList.remove('on'); });
 
 function buildPptx(){
   var doc=cp.documento;
@@ -1139,7 +1581,7 @@ function buildPptx(){
 }
 
 async function exportarTxt(){
-  document.getElementById('exportMenu').classList.remove('on');
+  $('exportMenu').classList.remove('on');
   if(!cp||!cp.documento){ showToast('El documento está vacío.',true); return; }
   var doc=cp.documento;
   var L=Array(60).join('─');
@@ -1158,7 +1600,7 @@ async function exportarTxt(){
   else{ var bl=new Blob([t],{type:'text/plain;charset=utf-8'}); var a=document.createElement('a'); a.href=URL.createObjectURL(bl); a.download=doc.titulo.replace(/ /g,'_')+'.txt'; a.click(); showToast('✓ Documento exportado'); }
 }
 async function exportarPptx(){
-  document.getElementById('exportMenu').classList.remove('on');
+  $('exportMenu').classList.remove('on');
   if(!cp||!cp.documento){ showToast('El documento está vacío.',true); return; }
   showToast('Generando presentación...');
   var pres=buildPptx();
@@ -1166,7 +1608,7 @@ async function exportarPptx(){
   showToast('✓ Presentación .pptx generada');
 }
 async function exportarPdf(){
-  document.getElementById('exportMenu').classList.remove('on');
+  $('exportMenu').classList.remove('on');
   if(!cp||!cp.documento){ showToast('El documento está vacío.',true); return; }
   showToast('Generando .pptx — ábrelo en PowerPoint y exporta como PDF');
   var pres=buildPptx();
@@ -1176,7 +1618,7 @@ async function guardarYSalir(){ await exportarTxt(); setTimeout(function(){ ir('
 
 // ─── PARTÍCULAS LOADING ──────────────────────────────
 (function(){
-  var canvas=document.getElementById('lfCanvas'); if(!canvas) return;
+  var canvas=$('lfCanvas'); if(!canvas) return;
   var ctx=canvas.getContext('2d'); var particles=[],running=false;
   function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
   function mkP(){ return {x:window.innerWidth/2+(Math.random()-.5)*60,y:window.innerHeight/2+(Math.random()-.5)*60,vx:(Math.random()-.5)*.6,vy:-(Math.random()*.8+.3),size:Math.random()*2+1,life:0,maxLife:120+Math.random()*80}; }
@@ -1194,19 +1636,19 @@ async function guardarYSalir(){ await exportarTxt(); setTimeout(function(){ ir('
     requestAnimationFrame(draw);
   }
   var obs=new MutationObserver(function(){
-    var on=document.getElementById('lf').classList.contains('on');
+    var on=$('lf').classList.contains('on');
     if(on&&!running){ running=true;resize();draw(); }
     else if(!on){ running=false;ctx.clearRect(0,0,canvas.width,canvas.height);particles=[]; }
   });
-  obs.observe(document.getElementById('lf'),{attributes:true,attributeFilter:['class']});
+  obs.observe($('lf'),{attributes:true,attributeFilter:['class']});
   window.addEventListener('resize',resize); resize();
 })();
 
 // ─── UTILS ──────────────────────────────────────────
-function cModal(id){ document.getElementById(id).classList.remove('on'); }
+function cModal(id){ $(id).classList.remove('on'); }
 function esc(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function showToast(msg,err){
-  var t=document.getElementById('toast');
+  var t=$('toast');
   t.textContent=msg;
   t.className='toast'+(err===true?' err':err==='info'?' info':'');
   t.classList.add('on');
