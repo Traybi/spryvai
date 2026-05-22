@@ -1529,34 +1529,60 @@ async function confirmRename(){
 function startDelete(id,type,nom){closeAllKdd();deleteTarget=id;deleteType=type;document.getElementById('delNomConfirm').textContent=`"${nom}"`;openModal('mDelete');}
 async function confirmDelete(){
   if(!deleteTarget)return;
+
+  console.log('[SpryvAI:delete] Intentando eliminar', { id: deleteTarget, tipo: deleteType });
+
   try{
-    // Borrar tablas relacionadas primero (no abortamos si fallan, pueden no existir filas)
-    await sb.from('proyecto_entradas').delete().eq('proyecto_id',deleteTarget);
-    await sb.from('proyecto_miembros').delete().eq('proyecto_id',deleteTarget);
+    // Llamada a la función RPC delete_proyecto en Supabase. Esa función:
+    //  - Comprueba que el usuario es el creador
+    //  - Borra de forma atómica el proyecto y todo lo relacionado
+    //  - Siempre devuelve un JSON con success true/false (no falla silencioso)
+    const { data, error } = await sb.rpc('delete_proyecto', { p_id: deleteTarget });
 
-    // Borrar el proyecto en sí, pidiendo de vuelta las filas afectadas para verificar
-    const {data, error} = await sb.from('proyectos')
-      .delete()
-      .eq('id', deleteTarget)
-      .eq('creador_id', cu.id)
-      .select();
+    console.log('[SpryvAI:delete] Respuesta de Supabase', { data, error });
 
+    // CASO 1: error de transporte / función no existe / permisos a la función
     if(error){
-      toast('Error al eliminar: ' + error.message, 'err');
-      return;
-    }
-    if(!data || data.length === 0){
-      // Supabase no falla cuando no encuentra filas a borrar (RLS o permisos)
-      toast('No se pudo eliminar. Revisa las políticas RLS en Supabase o si eres el creador.', 'err');
+      const detalle = error.message || error.hint || error.code || JSON.stringify(error);
+      console.error('[SpryvAI:delete] Error de RPC:', error);
+      if(error.message?.includes('does not exist') || error.code === '42883'){
+        toast('⚙️ Falta la función "delete_proyecto" en Supabase. Ejecuta delete_setup.sql en el SQL Editor.', 'err');
+      } else {
+        toast('Error al llamar a delete_proyecto: ' + detalle, 'err');
+      }
       return;
     }
 
-    const p=pinned(),pi=p.indexOf(deleteTarget);if(pi>=0){p.splice(pi,1);setPinned(p);}
-    if(deleteType==='proy')proyectos=proyectos.filter(x=>x.id!==deleteTarget);
-    else ideas=ideas.filter(x=>x.id!==deleteTarget);
-    deleteTarget=null;deleteType=null;
-    closeModal('mDelete');renderMain();toast('🗑 Eliminado correctamente','ok');
-  }catch(e){toast('Error: '+e.message,'err');}
+    // CASO 2: la función devolvió error lógico
+    if(!data || data.success !== true){
+      const code = data?.code || 'UNKNOWN';
+      const msg  = data?.error || 'Sin respuesta';
+      console.error('[SpryvAI:delete] La función devolvió error:', data);
+      let bonito = msg;
+      if(code === 'NOT_AUTHENTICATED') bonito = '🔑 Sesión no válida. Vuelve a iniciar sesión.';
+      else if(code === 'NOT_OWNER')    bonito = '🚫 Solo el creador puede eliminar este proyecto.';
+      else if(code === 'NOT_FOUND')    bonito = '👻 No existe (puede que ya se borrara antes).';
+      else if(code === 'DB_ERROR')     bonito = '💥 Error de BD: ' + msg;
+      toast('No se pudo eliminar — ' + bonito, 'err');
+      return;
+    }
+
+    // CASO 3: borrado correcto
+    console.log('[SpryvAI:delete] OK · borrado:', data.nombre);
+    const p=pinned(), pi=p.indexOf(deleteTarget);
+    if(pi>=0){ p.splice(pi,1); setPinned(p); }
+    if(deleteType==='proy') proyectos = proyectos.filter(x=>x.id!==deleteTarget);
+    else                    ideas     = ideas.filter(x=>x.id!==deleteTarget);
+    deleteTarget = null;
+    deleteType   = null;
+    closeModal('mDelete');
+    renderMain();
+    toast(`🗑 "${data.nombre}" eliminado`, 'ok');
+
+  }catch(e){
+    console.error('[SpryvAI:delete] Excepción JS:', e);
+    toast('Error inesperado: ' + e.message, 'err');
+  }
 }
 
 // ═══════════════════════════════════════════════
