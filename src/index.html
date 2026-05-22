@@ -723,11 +723,12 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 // ═══════════════════════════════════════════════
 //  CONFIG
 // ═══════════════════════════════════════════════
-const SURL    = 'https://dqnwyxpslznykpjmjuez.supabase.co';
-const SKEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxbnd5eHBzbHpueWtwam1qdWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NjM2NDIsImV4cCI6MjA5NDIzOTY0Mn0.wNxzCOT5T7uR4AotQZZ-JBxszMdIOEYS4bQ_EuA5TQo';
-const API_KEY = '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';
-const MODEL   = 'claude-sonnet-4-20250514';
-const sb      = supabase.createClient(SURL, SKEY);
+const SURL = 'https://dqnwyxpslznykpjmjuez.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxbnd5eHBzbHpueWtwam1qdWV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NjM2NDIsImV4cCI6MjA5NDIzOTY0Mn0.wNxzCOT5T7uR4AotQZZ-JBxszMdIOEYS4bQ_EuA5TQo';
+// La API key de Anthropic y el modelo viven en la Edge Function de Supabase
+// (ver elaborar-ia.ts y README.md). El cliente NUNCA debe conocer la API key.
+const FN_ELABORAR = 'elaborar-ia';
+const sb = supabase.createClient(SURL, SKEY);
 
 // ═══════════════════════════════════════════════
 //  STATE
@@ -889,13 +890,14 @@ function checkDeadlines() {
     if(!p.fecha_limite) return;
     if(isBannerDismissed(p.id)) return;
     const diff = Math.ceil((new Date(p.fecha_limite) - today) / 864e5);
-    if(diff<0) urgent.push({p,diff});
-    else if(diff<=3) urgent.push({p,diff});
+    // Si ya pasó la fecha → NO mostrar nada (sin notificación, sin banner)
+    if(diff<0) return;
+    if(diff<=3) urgent.push({p,diff});
     else if(diff<=7) warning.push({p,diff});
   });
 
   urgent.forEach(({p,diff})=>{
-    const txt = diff<0 ? 'Vencido hace '+Math.abs(diff)+' días' : diff===0 ? 'Vence hoy' : 'Vence en '+diff+' día'+(diff===1?'':'s');
+    const txt = diff===0 ? 'Vence hoy' : 'Vence en '+diff+' día'+(diff===1?'':'s');
     html+=`<div class="deadline-banner"><span class="db-ico">🚨</span><div class="db-body"><div class="db-title">${esc(p.nombre)}</div><div class="db-desc">${txt}</div></div><button class="db-open" onclick="openProy('${p.id}')">Abrir →</button><button class="db-close" title="Ocultar hasta mañana" onclick="dismissDeadlineBanner('${p.id}',event)">×</button></div>`;
     addNotif('🚨','Fecha límite urgente',`"${p.nombre}" — ${txt}`,p.id);
   });
@@ -1029,7 +1031,6 @@ function renderProyectos() {
           <span class="ptag ${isW?'work':'personal'}">${isW?'💼 Trabajo':'🏠 Personal'}</span>
           ${!esMio?'<span class="ptag inv">Invitado</span>':''}
         </div>
-        <div class="pcard-desc">${esc(p.descripcion||'Sin descripción')}</div>
         <div class="pcard-footer">${badge}${iCount?`<span class="pfb-ideas">💡 ${iCount} ideas</span>`:''} ${hist}</div>
       </div>
       <div class="kebab-wrap" onclick="event.stopPropagation()">
@@ -1291,8 +1292,6 @@ async function analizar(panel) {
   const obj=isProj?cp:ci;
   if(!nota&&!st.file&&!st.voice)return toast('Escribe algo o adjunta material','err');
   if(!obj)return;
-  const apiKey=API_KEY||(window.spryvai?await window.spryvai.getApiKey():'');
-  if(!apiKey)return toast('Falta la API key. Contacta con IT.','err');
 
   showLoading(obj.nombre);
   try {
@@ -1305,9 +1304,6 @@ async function analizar(panel) {
       const{data:up}=await sb.storage.from('archivos').upload(path,st.file,{upsert:true});
       if(up){const{data:ud}=sb.storage.from('archivos').getPublicUrl(path);fileUrl=ud?.publicUrl||'';}
     }
-
-    const content=[];
-    if(fileB64&&fileMime?.startsWith('image/'))content.push({type:'image',source:{type:'base64',media_type:fileMime,data:fileB64}});
 
     const existingDoc=obj.documento;
     const docStr=existingDoc?.secciones?.length?`DOCUMENTO ACTUAL:\nTítulo: ${existingDoc.titulo}\n${existingDoc.secciones.map(s=>`${s.numero}. ${s.titulo}:\n${s.contenido}`).join('\n\n')}`:'';
@@ -1360,16 +1356,44 @@ ${proyCtx||'Sin otros proyectos.'}
 
 ${docStr?docStr+'\n\nINTEGRA el nuevo material. Reescribe completo y más rico.':'Crea el documento inicial.'}`;
 
-    content.push({type:'text',text:userText});
+    // Llamada a la Edge Function de Supabase (que internamente llama a Anthropic
+    // con la API key guardada como secret — el cliente nunca la ve).
+    const { data: { session } } = await sb.auth.getSession();
+    if(!session) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
 
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:MODEL,max_tokens:4000,system:systemPrompt,messages:[{role:'user',content}]})
+    const resp = await fetch(`${SURL}/functions/v1/${FN_ELABORAR}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SKEY
+      },
+      body: JSON.stringify({
+        systemPrompt,
+        userText,
+        fileB64: fileMime?.startsWith('image/') ? fileB64 : null,
+        fileMime: fileMime?.startsWith('image/') ? fileMime : null
+      })
     });
-    if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'Error API');}
-    const result=await resp.json();
-    const raw=result.content?.map(c=>c.text||'').join('').trim().replace(/```json|```/g,'').trim();
+
+    if(!resp.ok){
+      let msg;
+      try{
+        const e = await resp.json();
+        msg = e.error || `HTTP ${resp.status}`;
+      }catch{
+        msg = `HTTP ${resp.status}`;
+      }
+      if(resp.status === 401) msg = '🔑 Sesión no válida. Vuelve a iniciar sesión.';
+      else if(resp.status === 403) msg = '🚫 Tu cuenta no tiene permiso. Solo @deloitte.*';
+      else if(resp.status === 404) msg = '⚙️ Edge Function no encontrada. ¿Has desplegado "elaborar-ia" en Supabase?';
+      else if(resp.status === 429) msg = '⏳ Demasiadas peticiones. Espera unos segundos.';
+      else if(resp.status >= 500) msg = '⚠️ Error del servidor. Reintenta en unos segundos.';
+      console.error('[SpryvAI] Edge Function error', resp.status, msg);
+      throw new Error(msg);
+    }
+    const result = await resp.json();
+    const raw = (result.text||'').trim().replace(/```json|```/g,'').trim();
     let doc;
     try{doc=JSON.parse(raw);}catch{throw new Error('La IA no devolvió JSON válido. Inténtalo de nuevo.');}
 
@@ -1416,7 +1440,20 @@ async function createProy(){
   if(error)return toast('Error: '+error.message,'err');
   await sb.from('proyecto_miembros').insert({proyecto_id:data.id,user_id:cu.id,rol:'creador'}).catch(()=>{});
   proyectos.unshift(data);
-  closeModal('mNewProy'); renderMain(); toast('Proyecto creado','ok');
+  closeModal('mNewProy'); renderMain();
+
+  // Si hay descripción → abrir proyecto y disparar IA para elaboración inicial
+  if(desc && desc.length > 5){
+    toast('Proyecto creado · La IA elaborará la estructura inicial...','ok');
+    cp = data; projTab = 0; showProy();
+    setTimeout(()=>{
+      document.getElementById('projPrompt').value = 'Crea la estructura inicial completa del proyecto basándote en su nombre y descripción. Incluye secciones relevantes, objetivos, contexto y primeros pasos accionables.';
+      updBtn('proj');
+      analizar('proj');
+    }, 500);
+  } else {
+    toast('Proyecto creado','ok');
+  }
 }
 
 function openNewIdea(){
@@ -1493,10 +1530,27 @@ function startDelete(id,type,nom){closeAllKdd();deleteTarget=id;deleteType=type;
 async function confirmDelete(){
   if(!deleteTarget)return;
   try{
+    // Borrar tablas relacionadas primero (no abortamos si fallan, pueden no existir filas)
     await sb.from('proyecto_entradas').delete().eq('proyecto_id',deleteTarget);
     await sb.from('proyecto_miembros').delete().eq('proyecto_id',deleteTarget);
-    const{error}=await sb.from('proyectos').delete().eq('id',deleteTarget).eq('creador_id',cu.id);
-    if(error){toast('Error al eliminar: '+error.message,'err');return;}
+
+    // Borrar el proyecto en sí, pidiendo de vuelta las filas afectadas para verificar
+    const {data, error} = await sb.from('proyectos')
+      .delete()
+      .eq('id', deleteTarget)
+      .eq('creador_id', cu.id)
+      .select();
+
+    if(error){
+      toast('Error al eliminar: ' + error.message, 'err');
+      return;
+    }
+    if(!data || data.length === 0){
+      // Supabase no falla cuando no encuentra filas a borrar (RLS o permisos)
+      toast('No se pudo eliminar. Revisa las políticas RLS en Supabase o si eres el creador.', 'err');
+      return;
+    }
+
     const p=pinned(),pi=p.indexOf(deleteTarget);if(pi>=0){p.splice(pi,1);setPinned(p);}
     if(deleteType==='proy')proyectos=proyectos.filter(x=>x.id!==deleteTarget);
     else ideas=ideas.filter(x=>x.id!==deleteTarget);
