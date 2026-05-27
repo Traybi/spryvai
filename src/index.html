@@ -176,7 +176,24 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 .pcard.pinned{border-color:rgba(134,188,37,.35);}
 .pcard.archived{opacity:.55;}
 .pcard.archived .pcard-stripe{background:var(--muted2);}
+
+/* Estado "elaborando con IA" — card en oscurito con badge */
+.pcard.elaborating, .icard.elaborating{pointer-events:none;opacity:.6;position:relative;}
+.pcard.elaborating::after, .icard.elaborating::after{
+  content:'✨ Elaborando con IA…';
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(0,0,0,.85);color:var(--g);
+  padding:7px 14px;border-radius:18px;
+  font-size:11.5px;font-weight:700;letter-spacing:.4px;
+  border:1px solid rgba(134,188,37,.4);
+  white-space:nowrap;z-index:10;
+  animation:pulseBadge 1.4s ease-in-out infinite;
+}
+@keyframes pulseBadge{0%,100%{opacity:.85;}50%{opacity:1;}}
 .pcard:hover{border-color:#444;box-shadow:0 4px 18px rgba(0,0,0,.25);}
+.pcard.elaborating, .icard.elaborating{pointer-events:none;}
+.pcard.elaborating .pcard-body, .icard.elaborating .icard-body{opacity:.45;filter:grayscale(.4);}
+.pcard.elaborating::after, .icard.elaborating::after{content:'✨ Elaborando con IA…';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--g);color:#000;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:800;font-family:'Syne',sans-serif;animation:pulse 1.5s ease-in-out infinite;z-index:5;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.4);}
 .pcard-stripe{width:3px;flex-shrink:0;border-radius:3px 0 0 3px;}
 .pcard.work .pcard-stripe{background:var(--g);}
 .pcard.personal .pcard-stripe{background:var(--red);}
@@ -480,9 +497,15 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 @media(max-width:860px){.main-layout{grid-template-columns:1fr;}}
 @media(max-width:600px){.doc-inner{padding:18px 14px;}.det-side{display:none;}.hdr-search{display:none;}}
 
-/* Cuando se filtra por Trabajo o Personal, ocultar columna de ideas y centrar */
-.main-layout.filter-only-proy{grid-template-columns:1fr;max-width:780px;}
-.main-layout.filter-only-proy #colIdeas{display:none;}
+/* Modos de vista (botones del nav superior + filtro Trabajo/Personal) */
+.main-layout.solo-proy{grid-template-columns:1fr;max-width:780px;}
+.main-layout.solo-proy #colIdeas{display:none;}
+.main-layout.solo-ideas{grid-template-columns:1fr;max-width:780px;}
+.main-layout.solo-ideas #colProy{display:none;}
+
+/* Botón activo del nav superior */
+.mnav-btn.on{background:var(--gd);color:var(--g);}
+.mnav-btn.on .mnav-cnt{background:rgba(134,188,37,.25);color:var(--g);}
 </style>
 </head>
 <body>
@@ -496,9 +519,9 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
   </a>
   <div class="hdr-divider"></div>
   <nav class="main-nav">
-    <button class="mnav-btn" id="navMain" onclick="nav('main')">🏠 Inicio <span class="mnav-cnt" id="cntMain">0</span></button>
-    <button class="mnav-btn" id="navProys" onclick="nav('main')">📁 Proyectos <span class="mnav-cnt" id="cntProys">0</span></button>
-    <button class="mnav-btn" id="navIdeas" onclick="nav('main')">💡 Ideas sueltas <span class="mnav-cnt" id="cntIdeas">0</span></button>
+    <button class="mnav-btn on" id="navMain" onclick="setViewMode('all')">🏠 Inicio <span class="mnav-cnt" id="cntMain">0</span></button>
+    <button class="mnav-btn" id="navProys" onclick="setViewMode('proy')">📁 Proyectos <span class="mnav-cnt" id="cntProys">0</span></button>
+    <button class="mnav-btn" id="navIdeas" onclick="setViewMode('ideas')">💡 Ideas sueltas <span class="mnav-cnt" id="cntIdeas">0</span></button>
   </nav>
   <div class="hdr-search">
     <span class="hdr-search-ico">🔍</span>
@@ -772,6 +795,8 @@ let filterActive='all';
 let selectedPaId='none';
 let notifications=[];
 let showArchived=false;
+let viewMode='all'; // 'all' | 'proy' | 'ideas' — controla qué columna se ve desde el nav superior
+let elaboratingIds = new Set(); // ids de proyectos/ideas que están siendo elaborados por la IA en background
 
 const state = {
   proj:{ file:null,b64:'',mime:'',voice:null,voiceSecs:0,voiceInterval:null,mr:null,chunks:[] },
@@ -1027,18 +1052,44 @@ async function loadData() {
 // ═══════════════════════════════════════════════
 //  RENDER MAIN
 // ═══════════════════════════════════════════════
-function renderMain() { renderProyectos(); renderIdeas(); updNavCounts(); }
+function renderMain() { renderProyectos(); renderIdeas(); updNavCounts(); applyViewMode(); }
 
 function setFilter(f,btn) {
   filterActive=f;
   document.querySelectorAll('.cfil').forEach(b=>{b.className='cfil';});
   btn.classList.add(f==='all'?'on':f==='Trabajo'?'on':'on-red');
-  // Cuando filtramos por una categoría concreta (Trabajo/Personal), ocultamos
-  // la columna de ideas porque las ideas sueltas no tienen ese tag → así el
-  // filtro de verdad reduce lo que se ve, en vez de quedarse a medias.
-  const layout = document.querySelector('.main-layout');
-  if(layout) layout.classList.toggle('filter-only-proy', f !== 'all');
+  // Si filtran por una categoría concreta (Trabajo/Personal), forzamos vista de proyectos
+  // porque las ideas sueltas no tienen ese tag.
+  if(f !== 'all' && viewMode === 'ideas') viewMode = 'proy';
+  if(f !== 'all' && viewMode === 'all')   viewMode = 'proy';
+  applyViewMode();
   renderProyectos();
+}
+
+// Cambia qué columna se ve (botones del nav superior)
+function setViewMode(mode){
+  viewMode = mode;
+  // Si paso a "ideas", el filtro Trabajo/Personal pierde sentido → lo reseteo
+  if(mode === 'ideas' && filterActive !== 'all'){
+    filterActive = 'all';
+    document.querySelectorAll('.cfil').forEach(b=>{b.className='cfil';});
+    document.getElementById('cfAll')?.classList.add('on');
+  }
+  applyViewMode();
+  renderProyectos();
+  renderIdeas();
+}
+
+// Aplica las clases CSS y resalta el botón activo según viewMode
+function applyViewMode(){
+  const layout = document.querySelector('.main-layout');
+  if(!layout) return;
+  layout.classList.remove('solo-proy','solo-ideas');
+  if(viewMode === 'proy')  layout.classList.add('solo-proy');
+  if(viewMode === 'ideas') layout.classList.add('solo-ideas');
+  document.getElementById('navMain')?.classList.toggle('on',  viewMode === 'all');
+  document.getElementById('navProys')?.classList.toggle('on', viewMode === 'proy');
+  document.getElementById('navIdeas')?.classList.toggle('on', viewMode === 'ideas');
 }
 
 function renderProyectos() {
@@ -1058,12 +1109,12 @@ function renderProyectos() {
     return;
   }
   el.innerHTML=sorted.map(p=>{
-    const isW=p.tag==='Trabajo', isPinned=pins.includes(p.id), esMio=p.creador_id===cu.id, isArch=!!p.archivado;
+    const isW=p.tag==='Trabajo', isPinned=pins.includes(p.id), esMio=p.creador_id===cu.id, isArch=!!p.archivado, isElab=elaboratingIds.has(p.id);
     const diff=p.fecha_limite?Math.ceil((new Date(p.fecha_limite)-new Date())/864e5):null;
     const badge=diff!==null?(diff<0?'<span class="pfb late">Vencido</span>':diff<=7?`<span class="pfb warn">${diff}d</span>`:`<span class="pfb ok">${new Date(p.fecha_limite).toLocaleDateString('es-ES')}</span>`):'';
     const iCount=p.ideas_ranking?.length||0;
     const hist=p.historial?.length?`<span class="hist-badge">🕒 ${p.historial.length} versiones</span>`:'';
-    return `<div class="pcard ${isW?'work':'personal'}${isPinned?' pinned':''}${isArch?' archived':''}" style="animation:fu .3s ease">
+    return `<div class="pcard ${isW?'work':'personal'}${isPinned?' pinned':''}${isArch?' archived':''}${isElab?' elaborating':''}" style="animation:fu .3s ease">
       ${isPinned?'<div class="pcard-pin">📌 Anclado</div>':''}
       <div class="pcard-stripe"></div>
       <div class="pcard-body" onclick="openProy('${p.id}')">
@@ -1105,7 +1156,8 @@ function renderIdeas() {
     const excerpt=(idea.documento?.secciones?.[0]?.contenido||idea.descripcion||'').substring(0,100);
     const hist=idea.historial?.length?`<span class="hist-badge">🕒 ${idea.historial.length}v</span>`:'';
     const isArch = !!idea.archivado;
-    return `<div class="icard${isArch?' archived':''}" style="animation-delay:${i*.04}s;animation:fu .3s ease both">
+    const isElab = elaboratingIds.has(idea.id);
+    return `<div class="icard${isArch?' archived':''}${isElab?' elaborating':''}" style="animation-delay:${i*.04}s;animation:fu .3s ease both">
       <div class="icard-body" onclick="openIdea('${idea.id}')">
         <div class="icard-top">
           <div class="icard-nom">${esc(idea.nombre)}</div>
@@ -1404,20 +1456,26 @@ async function addComment(secIdx) {
 // ═══════════════════════════════════════════════
 //  ANALIZAR CON IA
 // ═══════════════════════════════════════════════
-async function analizar(panel) {
-  const isProj=panel==='proj';
-  const st=state[panel];
-  const promptEl=document.getElementById(isProj?'projPrompt':'ideaPrompt');
-  const nota=promptEl?.value.trim()||'';
-  const obj=isProj?cp:ci;
-  if(!nota&&!st.file&&!st.voice)return toast('Escribe algo o adjunta material','err');
-  if(!obj)return;
+async function analizar(panel, options = {}) {
+  const autoTriggered = options.autoTriggered === true;
+  const overrideObj   = options.obj || null;
+  const overridePrompt= options.prompt || null;
 
-  showLoading(obj.nombre);
+  const isProj = panel==='proj';
+  const st = state[panel];
+  const promptEl = document.getElementById(isProj?'projPrompt':'ideaPrompt');
+  const nota = overridePrompt || (promptEl?.value.trim()||'');
+  const obj  = overrideObj || (isProj?cp:ci);
+  if(!nota && !st.file && !st.voice && !autoTriggered) return toast('Escribe algo o adjunta material','err');
+  if(!obj) return;
+
+  if(!autoTriggered) showLoading(obj.nombre);
+  else { elaboratingIds.add(obj.id); renderMain(); }
+
   try {
     // Upload file
     let fileUrl='',fileName='',fileB64='',fileMime='';
-    if(st.file){
+    if(st.file && !autoTriggered){
       fileName=st.file.name; fileMime=st.file.type;
       fileB64=await toB64(st.file);
       const path=`${cu.id}/${Date.now()}_${fileName}`;
@@ -1469,15 +1527,14 @@ ${obj.fecha_limite?`Fecha límite: ${obj.fecha_limite}`:''}
 
 MATERIAL NUEVO: ${nota||'Sin comentario adicional'}
 ${fileName&&!fileMime?.startsWith('image/')?`Archivo adjunto: ${fileName}`:''}
-${st.voice?`[Nota de voz de ~${st.voiceSecs}s adjunta. Considera que refuerza el contexto escrito.]`:''}
+${st.voice&&!autoTriggered?`[Nota de voz de ~${st.voiceSecs}s adjunta. Considera que refuerza el contexto escrito.]`:''}
 
 PROYECTOS EXISTENTES (para ranking y sinergias):
 ${proyCtx||'Sin otros proyectos.'}
 
 ${docStr?docStr+'\n\nINTEGRA el nuevo material. Reescribe completo y más rico.':'Crea el documento inicial.'}`;
 
-    // Llamada a la Edge Function de Supabase (que internamente llama a Anthropic
-    // con la API key guardada como secret — el cliente nunca la ve).
+    // Llamada a la Edge Function de Supabase
     const { data: { session } } = await sb.auth.getSession();
     if(!session) throw new Error('Sesión expirada. Vuelve a iniciar sesión.');
 
@@ -1498,12 +1555,8 @@ ${docStr?docStr+'\n\nINTEGRA el nuevo material. Reescribe completo y más rico.'
 
     if(!resp.ok){
       let msg;
-      try{
-        const e = await resp.json();
-        msg = e.error || `HTTP ${resp.status}`;
-      }catch{
-        msg = `HTTP ${resp.status}`;
-      }
+      try{const e = await resp.json(); msg = e.error || `HTTP ${resp.status}`;}
+      catch{msg = `HTTP ${resp.status}`;}
       if(resp.status === 401) msg = '🔑 Sesión no válida. Vuelve a iniciar sesión.';
       else if(resp.status === 403) msg = '🚫 Tu cuenta no tiene permiso. Solo @deloitte.*';
       else if(resp.status === 404) msg = '⚙️ Edge Function no encontrada. ¿Has desplegado "elaborar-ia" en Supabase?';
@@ -1517,33 +1570,53 @@ ${docStr?docStr+'\n\nINTEGRA el nuevo material. Reescribe completo y más rico.'
     let doc;
     try{doc=JSON.parse(raw);}catch{throw new Error('La IA no devolvió JSON válido. Inténtalo de nuevo.');}
 
-    // Preserve existing comments
     if(existingDoc?.comentarios) doc.comentarios=existingDoc.comentarios;
 
-    // Build historial entry
     const histEntry={fecha:new Date().toLocaleDateString('es-ES'),nota:nota.substring(0,100)||'Elaboración IA',documento:existingDoc||null};
     const oldHistorial=obj.historial||[];
-    const newHistorial=[...oldHistorial,histEntry].slice(-20); // Keep last 20
+    const newHistorial=[...oldHistorial,histEntry].slice(-20);
 
     const payload={documento:doc,ia_score:doc.ia_score||0,ia_categoria:doc.ia_categoria||null,proyectos_ranking:doc.proyectos_ranking||[],ideas_ranking:doc.ideas_ranking||[],sinergias:doc.sinergias||[],historial:newHistorial};
-    await sb.from('proyectos').update(payload).eq('id',obj.id);
+
+    // GUARDADO con verificación: si UPDATE devuelve 0 filas, fallo silencioso por RLS
+    console.log('[SpryvAI:save] Guardando elaboración de', obj.id);
+    const {data: updated, error: updErr} = await sb.from('proyectos').update(payload).eq('id', obj.id).select();
+    if(updErr){
+      console.error('[SpryvAI:save] Error UPDATE:', updErr);
+      throw new Error('Error al guardar: ' + updErr.message);
+    }
+    if(!updated || updated.length === 0){
+      console.error('[SpryvAI:save] UPDATE devolvió 0 filas — falta policy RLS UPDATE en proyectos');
+      throw new Error('⚠️ El guardado no impactó ninguna fila. Falta una policy UPDATE en RLS. Ejecuta delete_setup.sql actualizado.');
+    }
+    console.log('[SpryvAI:save] Guardado OK', updated[0]);
     Object.assign(obj,payload);
 
     // Update local cache
     if(isProj){const idx=proyectos.findIndex(p=>p.id===obj.id);if(idx>=0)proyectos[idx]={...proyectos[idx],...payload};}
     else{const idx=ideas.findIndex(i=>i.id===obj.id);if(idx>=0)ideas[idx]={...ideas[idx],...payload};}
 
-    // Register entry
-    await sb.from('proyecto_entradas').insert({proyecto_id:isProj?obj.id:null,user_id:cu.id,archivo_nombre:fileName||'',archivo_url:fileUrl,nota}).catch(()=>{});
+    if(!autoTriggered){
+      await sb.from('proyecto_entradas').insert({proyecto_id:isProj?obj.id:null,user_id:cu.id,archivo_nombre:fileName||'',archivo_url:fileUrl,nota}).catch(()=>{});
+      if(promptEl) promptEl.value='';
+      clearFile(panel); clearVoice(panel);
+      hideLoading();
+      if(isProj)renderProjTab(projTab); else switchIdeaTab(ideaTab);
+      toast('✦ Elaborado con éxito','ok');
+      const newIdx=doc.secciones?.findIndex(s=>s.esNuevo);
+      if(newIdx>=0)setTimeout(()=>document.getElementById(`ds-${newIdx}`)?.scrollIntoView({behavior:'smooth',block:'center'}),400);
+    } else {
+      elaboratingIds.delete(obj.id);
+      renderMain();
+      toast(`✨ "${obj.nombre}" elaborado automáticamente`, 'ok');
+    }
 
-    promptEl.value=''; clearFile(panel); clearVoice(panel);
-    hideLoading();
-    if(isProj)renderProjTab(projTab); else switchIdeaTab(ideaTab);
-    toast('✦ Elaborado con éxito','ok');
-    const newIdx=doc.secciones?.findIndex(s=>s.esNuevo);
-    if(newIdx>=0)setTimeout(()=>document.getElementById(`ds-${newIdx}`)?.scrollIntoView({behavior:'smooth',block:'center'}),400);
-
-  }catch(err){hideLoading();toast(err.message,'err');}
+  }catch(err){
+    if(!autoTriggered) hideLoading();
+    else { elaboratingIds.delete(obj.id); renderMain(); }
+    console.error('[SpryvAI:analizar]', err);
+    toast(err.message,'err');
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1559,21 +1632,23 @@ async function createProy(){
   document.getElementById('btnCP').disabled=false;
   if(error)return toast('Error: '+error.message,'err');
   await sb.from('proyecto_miembros').insert({proyecto_id:data.id,user_id:cu.id,rol:'creador'}).catch(()=>{});
-  proyectos.unshift(data);
-  closeModal('mNewProy'); renderMain();
 
-  // Si hay descripción → abrir proyecto y disparar IA para elaboración inicial
-  if(desc && desc.length > 5){
-    toast('Proyecto creado · La IA elaborará la estructura inicial...','ok');
-    cp = data; projTab = 0; showProy();
-    setTimeout(()=>{
-      document.getElementById('projPrompt').value = 'Crea la estructura inicial completa del proyecto basándote en su nombre y descripción. Incluye secciones relevantes, objetivos, contexto y primeros pasos accionables.';
-      updBtn('proj');
-      analizar('proj');
-    }, 500);
-  } else {
-    toast('Proyecto creado','ok');
-  }
+  // Mostrar inmediatamente la card en lista (en estado "elaborando")
+  proyectos.unshift(data);
+  elaboratingIds.add(data.id);
+  closeModal('mNewProy');
+  renderMain();
+  toast('🪄 La IA está elaborando tu proyecto...','ok');
+
+  // Disparar IA en background SIN navegar a la página del proyecto
+  const initialPrompt = desc && desc.length > 0
+    ? `Crea la estructura inicial completa del proyecto "${nom}" basándote en su descripción: "${desc}". Incluye secciones relevantes, objetivos, contexto y primeros pasos accionables.`
+    : `Crea la estructura inicial completa del proyecto "${nom}". Categoría: ${tag}. Genera secciones útiles para un proyecto de este tipo, objetivos sugeridos, contexto inicial y primeros pasos accionables.`;
+
+  // Pequeño delay para que la card aparezca antes de empezar la elaboración
+  setTimeout(()=>{
+    analizar('proj', { autoTriggered: true, obj: data, prompt: initialPrompt });
+  }, 200);
 }
 
 function openNewIdea(){
@@ -1603,9 +1678,22 @@ async function createIdea(){
   const{data,error}=await sb.from('proyectos').insert({nombre:nom,descripcion:desc,tag:'idea',creador_id:cu.id,es_idea_suelta:true}).select().single();
   document.getElementById('btnCI').disabled=false;
   if(error)return toast('Error: '+error.message,'err');
+
+  // Mostrar inmediatamente la card en lista (en estado "elaborando")
   ideas.unshift(data);
-  closeModal('mNewIdea'); renderMain(); toast('Idea creada','ok');
-  ci=data; ideaTab=0; showIdea();
+  elaboratingIds.add(data.id);
+  closeModal('mNewIdea');
+  renderMain();
+  toast('🪄 La IA está elaborando tu idea...','ok');
+
+  // Disparar IA en background SIN navegar a la página de la idea
+  const initialPrompt = desc && desc.length > 0
+    ? `Desarrolla esta idea: "${nom}". Descripción inicial: "${desc}". Dale forma, estructúrala en secciones útiles y propón próximos pasos concretos.`
+    : `Desarrolla esta idea suelta: "${nom}". Estructúrala con secciones útiles, contexto, posibles enfoques y próximos pasos accionables.`;
+
+  setTimeout(()=>{
+    analizar('idea', { autoTriggered: true, obj: data, prompt: initialPrompt });
+  }, 200);
 }
 
 // ═══════════════════════════════════════════════
@@ -1650,59 +1738,95 @@ function startDelete(id,type,nom){closeAllKdd();deleteTarget=id;deleteType=type;
 async function confirmDelete(){
   if(!deleteTarget)return;
 
-  console.log('[SpryvAI:delete] Intentando eliminar', { id: deleteTarget, tipo: deleteType });
+  const targetId   = deleteTarget;
+  const targetType = deleteType;
+  console.log('[SpryvAI:delete] Iniciando borrado', { id: targetId, tipo: targetType, user: cu?.id, email: cu?.email });
 
-  try{
-    // Llamada a la función RPC delete_proyecto en Supabase. Esa función:
-    //  - Comprueba que el usuario es el creador
-    //  - Borra de forma atómica el proyecto y todo lo relacionado
-    //  - Siempre devuelve un JSON con success true/false (no falla silencioso)
-    const { data, error } = await sb.rpc('delete_proyecto', { p_id: deleteTarget });
-
-    console.log('[SpryvAI:delete] Respuesta de Supabase', { data, error });
-
-    // CASO 1: error de transporte / función no existe / permisos a la función
-    if(error){
-      const detalle = error.message || error.hint || error.code || JSON.stringify(error);
-      console.error('[SpryvAI:delete] Error de RPC:', error);
-      if(error.message?.includes('does not exist') || error.code === '42883'){
-        toast('⚙️ Falta la función "delete_proyecto" en Supabase. Ejecuta delete_setup.sql en el SQL Editor.', 'err');
-      } else {
-        toast('Error al llamar a delete_proyecto: ' + detalle, 'err');
-      }
-      return;
-    }
-
-    // CASO 2: la función devolvió error lógico
-    if(!data || data.success !== true){
-      const code = data?.code || 'UNKNOWN';
-      const msg  = data?.error || 'Sin respuesta';
-      console.error('[SpryvAI:delete] La función devolvió error:', data);
-      let bonito = msg;
-      if(code === 'NOT_AUTHENTICATED') bonito = '🔑 Sesión no válida. Vuelve a iniciar sesión.';
-      else if(code === 'NOT_OWNER')    bonito = '🚫 Solo el creador puede eliminar este proyecto.';
-      else if(code === 'NOT_FOUND')    bonito = '👻 No existe (puede que ya se borrara antes).';
-      else if(code === 'DB_ERROR')     bonito = '💥 Error de BD: ' + msg;
-      toast('No se pudo eliminar — ' + bonito, 'err');
-      return;
-    }
-
-    // CASO 3: borrado correcto
-    console.log('[SpryvAI:delete] OK · borrado:', data.nombre);
-    const p=pinned(), pi=p.indexOf(deleteTarget);
-    if(pi>=0){ p.splice(pi,1); setPinned(p); }
-    if(deleteType==='proy') proyectos = proyectos.filter(x=>x.id!==deleteTarget);
-    else                    ideas     = ideas.filter(x=>x.id!==deleteTarget);
-    deleteTarget = null;
-    deleteType   = null;
-    closeModal('mDelete');
-    renderMain();
-    toast(`🗑 "${data.nombre}" eliminado`, 'ok');
-
-  }catch(e){
-    console.error('[SpryvAI:delete] Excepción JS:', e);
-    toast('Error inesperado: ' + e.message, 'err');
+  // Obtener sesión actual
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    alert('Sesión expirada. Cierra y vuelve a iniciar sesión.');
+    return;
   }
+
+  // Llamada DIRECTA por fetch a la RPC (sin pasar por supabase-js)
+  // Esto nos da control total sobre headers, respuesta y errores.
+  let resp, bodyText;
+  try{
+    resp = await fetch(`${SURL}/rest/v1/rpc/delete_proyecto`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SKEY,
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ p_id: targetId })
+    });
+    bodyText = await resp.text();
+  }catch(e){
+    console.error('[SpryvAI:delete] Fallo de red:', e);
+    alert(`No se pudo conectar con Supabase:\n\n${e.message}\n\nRevisa tu conexión y reintenta.`);
+    return;
+  }
+
+  console.log('[SpryvAI:delete] HTTP', resp.status, '· Body:', bodyText);
+
+  // Status no-OK → la BD o el gateway rechazaron la llamada
+  if(!resp.ok){
+    let detail = bodyText;
+    try{
+      const j = JSON.parse(bodyText);
+      detail = j.message || j.hint || j.error || bodyText;
+    }catch{}
+    if(resp.status === 404){
+      alert(`HTTP 404: la función "delete_proyecto" NO existe en la base de datos.\n\nEjecuta el archivo delete_setup.sql en el SQL Editor de Supabase.\n\nDetalle:\n${detail}`);
+    } else if(resp.status === 401){
+      alert(`HTTP 401: sesión no válida.\n\n${detail}\n\nCierra y vuelve a iniciar sesión.`);
+    } else if(resp.status === 403){
+      alert(`HTTP 403: sin permisos para invocar delete_proyecto.\n\n${detail}\n\nVerifica que el GRANT EXECUTE está aplicado (lo hace delete_setup.sql).`);
+    } else {
+      alert(`HTTP ${resp.status} al borrar:\n\n${detail}\n\nPégame este mensaje y lo diagnostico.`);
+    }
+    return;
+  }
+
+  // Parsear respuesta JSON
+  let result;
+  try{
+    result = JSON.parse(bodyText);
+  }catch{
+    alert(`Respuesta inesperada de Supabase (no es JSON):\n\n${bodyText.substring(0, 400)}\n\nPégame esto.`);
+    return;
+  }
+
+  // La función devolvió error lógico
+  if(!result || result.success !== true){
+    const code = result?.code   || 'UNKNOWN';
+    const msg  = result?.error  || 'Sin mensaje';
+    const det  = result?.detail ? `\nDetalle SQL: ${result.detail}` : '';
+    console.error('[SpryvAI:delete] Función devolvió error:', result);
+
+    let bonito;
+    if(code === 'NOT_AUTHENTICATED') bonito = '🔑 La sesión no es válida dentro de la BD. Cierra y vuelve a iniciar sesión.';
+    else if(code === 'NOT_OWNER')    bonito = '🚫 Solo el creador puede eliminar.\n\nTu user.id es: ' + cu?.id + '\nEl proyecto/idea fue creado por otra cuenta.';
+    else if(code === 'NOT_FOUND')    bonito = '👻 No existe (puede que ya se borrara). Pulsa el botón ↻ del header para recargar.';
+    else if(code === 'DB_ERROR')     bonito = '💥 Error de BD: ' + msg + det;
+    else                              bonito = `${code}: ${msg}${det}`;
+    alert('No se pudo eliminar:\n\n' + bonito);
+    return;
+  }
+
+  // ✅ Borrado correcto
+  console.log('[SpryvAI:delete] OK · borrado:', result.nombre);
+  const p=pinned(), pi=p.indexOf(targetId);
+  if(pi>=0){ p.splice(pi,1); setPinned(p); }
+  if(targetType==='proy') proyectos = proyectos.filter(x=>x.id!==targetId);
+  else                    ideas     = ideas.filter(x=>x.id!==targetId);
+  deleteTarget = null;
+  deleteType   = null;
+  closeModal('mDelete');
+  renderMain();
+  toast(`🗑 "${result.nombre}" eliminado`, 'ok');
 }
 
 // ═══════════════════════════════════════════════
