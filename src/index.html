@@ -96,6 +96,19 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 .btn-out{background:none;border:none;color:var(--muted2);font-size:12px;cursor:pointer;padding:0 0 0 8px;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;transition:color .2s;}
 .btn-out:hover{color:var(--red);}
 
+/* Botón recargar en header */
+.reload-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:7px 10px;font-size:14px;transition:all .2s;line-height:1;}
+.reload-btn:hover{border-color:var(--g);color:var(--g);}
+.reload-btn.spinning{animation:spin .8s linear infinite;}
+
+/* Toggle archivados */
+.arch-toggle-row{max-width:1200px;margin:18px auto -8px;padding:0 24px;display:flex;justify-content:flex-end;}
+.arch-toggle-btn{display:flex;align-items:center;gap:7px;padding:6px 13px;background:var(--card);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
+.arch-toggle-btn:hover{border-color:#555;color:var(--text);}
+.arch-toggle-btn.on{border-color:var(--warn);background:var(--warnd);color:var(--warn);}
+.arch-toggle-btn .ac-cnt{font-size:11px;font-weight:700;padding:1px 7px;border-radius:20px;background:var(--border);color:var(--muted);}
+.arch-toggle-btn.on .ac-cnt{background:rgba(224,153,85,.25);color:var(--warn);}
+
 /* ── SCREENS ── */
 .scr-center{display:none;}
 .scr-center.on{display:flex;flex:1;width:100%;min-height:0;align-items:center;justify-content:center;overflow-y:auto;padding:40px 24px;background:var(--dark);}
@@ -161,6 +174,8 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 .proy-list,.idea-list{display:flex;flex-direction:column;gap:8px;}
 .pcard{background:var(--card);border:1px solid var(--border);border-radius:11px;display:flex;align-items:stretch;cursor:pointer;transition:border-color .2s,box-shadow .2s;position:relative;overflow:visible;}
 .pcard.pinned{border-color:rgba(134,188,37,.35);}
+.pcard.archived{opacity:.55;}
+.pcard.archived .pcard-stripe{background:var(--muted2);}
 .pcard:hover{border-color:#444;box-shadow:0 4px 18px rgba(0,0,0,.25);}
 .pcard-stripe{width:3px;flex-shrink:0;border-radius:3px 0 0 3px;}
 .pcard.work .pcard-stripe{background:var(--g);}
@@ -195,9 +210,12 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 .kd-sep{height:1px;background:var(--border);margin:3px 0;}
 
 /* ── IDEA CARDS (sueltas) ── */
-.icard{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:13px 15px;cursor:pointer;transition:all .2s;position:relative;}
-.icard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue);border-radius:3px 0 0 3px;}
+.icard{background:var(--card);border:1px solid var(--border);border-radius:11px;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:stretch;overflow:visible;}
+.icard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue);border-radius:3px 0 0 3px;z-index:1;}
 .icard:hover{border-color:rgba(134,188,37,.3);box-shadow:0 4px 18px rgba(0,0,0,.25);}
+.icard.archived{opacity:.55;}
+.icard.archived::before{background:var(--muted2);}
+.icard-body{flex:1;padding:13px 15px;min-width:0;cursor:pointer;}
 .icard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:9px;margin-bottom:6px;}
 .icard-nom{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:white;flex:1;}
 .score-badge{font-size:12px;font-weight:700;padding:2px 9px;border-radius:20px;font-family:'Syne',sans-serif;flex-shrink:0;}
@@ -483,6 +501,7 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
     <input type="text" id="globalSearch" placeholder="Buscar proyectos e ideas..." oninput="doSearch()" onfocus="showSearchOverlay()" onblur="setTimeout(hideSearchOverlay,200)">
   </div>
   <div class="hdr-right">
+    <button class="reload-btn" id="reloadBtn" onclick="doReload()" title="Recargar (Ctrl+R)">↻</button>
     <div style="position:relative">
       <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" title="Notificaciones">🔔</button>
       <div class="notif-panel" id="notifPanel">
@@ -531,6 +550,12 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 <!-- ── MAIN ── -->
 <div class="scr" id="sMain">
   <div id="deadlineBanners"></div>
+  <div class="arch-toggle-row">
+    <button class="arch-toggle-btn" id="archToggleBtn" onclick="toggleShowArchived()">
+      📦 <span id="archToggleLbl">Mostrar archivados</span>
+      <span class="ac-cnt" id="archCnt">0</span>
+    </button>
+  </div>
   <div class="main-layout">
     <div>
       <div class="col-hdr">
@@ -742,6 +767,7 @@ let renameTarget=null, renameType=null;
 let filterActive='all';
 let selectedPaId='none';
 let notifications=[];
+let showArchived=false;
 
 const state = {
   proj:{ file:null,b64:'',mime:'',voice:null,voiceSecs:0,voiceInterval:null,mr:null,chunks:[] },
@@ -1009,20 +1035,26 @@ function setFilter(f,btn) {
 function renderProyectos() {
   const el=document.getElementById('proyList');
   const pins=pinned();
-  let lista=filterActive==='all'?proyectos:proyectos.filter(p=>p.tag===filterActive);
+  // Filtro principal: archivados (sí o no) según showArchived
+  let lista = proyectos.filter(p => !!p.archivado === showArchived);
+  // Luego filtro por categoría
+  if(filterActive !== 'all') lista = lista.filter(p => p.tag === filterActive);
   const sorted=[...lista.filter(p=>pins.includes(p.id)),...lista.filter(p=>!pins.includes(p.id))];
 
   if(!sorted.length){
-    el.innerHTML=`<div class="col-empty"><div class="col-empty-ico">📁</div><p>${proyectos.length===0?'Aún no tienes proyectos.<br>Crea el primero.':'Sin proyectos en esta categoría.'}</p></div>`;
+    const msg = showArchived
+      ? 'No hay proyectos archivados.'
+      : (proyectos.length===0 ? 'Aún no tienes proyectos.<br>Crea el primero.' : 'Sin proyectos en esta categoría.');
+    el.innerHTML=`<div class="col-empty"><div class="col-empty-ico">📁</div><p>${msg}</p></div>`;
     return;
   }
   el.innerHTML=sorted.map(p=>{
-    const isW=p.tag==='Trabajo', isPinned=pins.includes(p.id), esMio=p.creador_id===cu.id;
+    const isW=p.tag==='Trabajo', isPinned=pins.includes(p.id), esMio=p.creador_id===cu.id, isArch=!!p.archivado;
     const diff=p.fecha_limite?Math.ceil((new Date(p.fecha_limite)-new Date())/864e5):null;
     const badge=diff!==null?(diff<0?'<span class="pfb late">Vencido</span>':diff<=7?`<span class="pfb warn">${diff}d</span>`:`<span class="pfb ok">${new Date(p.fecha_limite).toLocaleDateString('es-ES')}</span>`):'';
     const iCount=p.ideas_ranking?.length||0;
     const hist=p.historial?.length?`<span class="hist-badge">🕒 ${p.historial.length} versiones</span>`:'';
-    return `<div class="pcard ${isW?'work':'personal'}${isPinned?' pinned':''}" style="animation:fu .3s ease">
+    return `<div class="pcard ${isW?'work':'personal'}${isPinned?' pinned':''}${isArch?' archived':''}" style="animation:fu .3s ease">
       ${isPinned?'<div class="pcard-pin">📌 Anclado</div>':''}
       <div class="pcard-stripe"></div>
       <div class="pcard-body" onclick="openProy('${p.id}')">
@@ -1030,6 +1062,7 @@ function renderProyectos() {
           <span class="pcard-nom">${esc(p.nombre)}</span>
           <span class="ptag ${isW?'work':'personal'}">${isW?'💼 Trabajo':'🏠 Personal'}</span>
           ${!esMio?'<span class="ptag inv">Invitado</span>':''}
+          ${isArch?'<span class="ptag" style="background:rgba(224,153,85,.2);color:var(--warn)">📦 Archivado</span>':''}
         </div>
         <div class="pcard-footer">${badge}${iCount?`<span class="pfb-ideas">💡 ${iCount} ideas</span>`:''} ${hist}</div>
       </div>
@@ -1039,6 +1072,7 @@ function renderProyectos() {
           <div class="kdi" onclick="openProy('${p.id}')"><span class="ki">↗</span>Abrir</div>
           <div class="kdi" onclick="startRename('${p.id}','proy',${JSON.stringify(p.nombre)})"><span class="ki">✏️</span>Renombrar</div>
           <div class="kdi" onclick="togglePin('${p.id}')"><span class="ki">${isPinned?'📍':'📌'}</span>${isPinned?'Desanclar':'Anclar'}</div>
+          <div class="kdi" onclick="toggleArchive('${p.id}','proy')"><span class="ki">${isArch?'📤':'📦'}</span>${isArch?'Desarchivar':'Archivar'}</div>
           <div class="kd-sep"></div>
           <div class="kdi danger" onclick="startDelete('${p.id}','proy',${JSON.stringify(p.nombre)})"><span class="ki">🗑</span>Eliminar</div>
         </div>
@@ -1049,31 +1083,108 @@ function renderProyectos() {
 
 function renderIdeas() {
   const el=document.getElementById('ideaList');
-  if(!ideas.length){el.innerHTML='<div class="col-empty"><div class="col-empty-ico">💡</div><p>Ideas sueltas sin proyecto.<br>Crea la primera.</p></div>';return;}
-  el.innerHTML=ideas.map((idea,i)=>{
+  const lista = ideas.filter(i => !!i.archivado === showArchived);
+  if(!lista.length){
+    const msg = showArchived
+      ? 'No hay ideas archivadas.'
+      : (ideas.length === 0 ? 'Ideas sueltas sin proyecto.<br>Crea la primera.' : 'Todas tus ideas están archivadas.');
+    el.innerHTML=`<div class="col-empty"><div class="col-empty-ico">💡</div><p>${msg}</p></div>`;
+    return;
+  }
+  el.innerHTML=lista.map((idea,i)=>{
     const score=idea.ia_score||0, scCls=score>=7?'hi':score>=4?'mid':'lo';
     const excerpt=(idea.documento?.secciones?.[0]?.contenido||idea.descripcion||'').substring(0,100);
     const hist=idea.historial?.length?`<span class="hist-badge">🕒 ${idea.historial.length}v</span>`:'';
-    return `<div class="icard" onclick="openIdea('${idea.id}')" style="animation-delay:${i*.04}s;animation:fu .3s ease both">
-      <div class="icard-top">
-        <div class="icard-nom">${esc(idea.nombre)}</div>
-        ${score?`<span class="score-badge score-${scCls}">IA: ${score}/10</span>`:''}
+    const isArch = !!idea.archivado;
+    return `<div class="icard${isArch?' archived':''}" style="animation-delay:${i*.04}s;animation:fu .3s ease both">
+      <div class="icard-body" onclick="openIdea('${idea.id}')">
+        <div class="icard-top">
+          <div class="icard-nom">${esc(idea.nombre)}</div>
+          ${score?`<span class="score-badge score-${scCls}">IA: ${score}/10</span>`:''}
+        </div>
+        <div class="icard-exc">${esc(excerpt)}${excerpt.length>=100?'…':''}</div>
+        <div class="icard-footer">
+          ${idea.ia_categoria?`<span class="itag">${esc(idea.ia_categoria)}</span>`:''}
+          ${isArch?'<span class="itag" style="background:rgba(224,153,85,.2);color:var(--warn)">📦 Archivada</span>':''}
+          ${hist}
+          ${idea.documento?.secciones?.length?'<span style="font-size:11px;color:var(--g);margin-left:auto">✦ Elaborada</span>':''}
+        </div>
       </div>
-      <div class="icard-exc">${esc(excerpt)}${excerpt.length>=100?'…':''}</div>
-      <div class="icard-footer">
-        ${idea.ia_categoria?`<span class="itag">${esc(idea.ia_categoria)}</span>`:''}
-        ${hist}
-        ${idea.documento?.secciones?.length?'<span style="font-size:11px;color:var(--g);margin-left:auto">✦ Elaborada</span>':''}
+      <div class="kebab-wrap" onclick="event.stopPropagation()" style="display:flex;align-items:flex-start;padding-top:9px;padding-right:6px">
+        <button class="kebab-btn" onclick="toggleKdd('kdd-i-${idea.id}')">⋯</button>
+        <div class="kdd" id="kdd-i-${idea.id}">
+          <div class="kdi" onclick="openIdea('${idea.id}')"><span class="ki">↗</span>Abrir</div>
+          <div class="kdi" onclick="startRename('${idea.id}','idea',${JSON.stringify(idea.nombre)})"><span class="ki">✏️</span>Renombrar</div>
+          <div class="kdi" onclick="openAssignProyModal('${idea.id}')"><span class="ki">📁</span>Mover a proyecto</div>
+          <div class="kdi" onclick="toggleArchive('${idea.id}','idea')"><span class="ki">${isArch?'📤':'📦'}</span>${isArch?'Desarchivar':'Archivar'}</div>
+          <div class="kd-sep"></div>
+          <div class="kdi danger" onclick="startDelete('${idea.id}','idea',${JSON.stringify(idea.nombre)})"><span class="ki">🗑</span>Eliminar</div>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
 function updNavCounts() {
-  const total=proyectos.length+ideas.length;
-  document.getElementById('cntMain').textContent=total;
-  document.getElementById('cntProys').textContent=proyectos.length;
-  document.getElementById('cntIdeas').textContent=ideas.length;
+  const archivedCount = proyectos.filter(p=>p.archivado).length + ideas.filter(i=>i.archivado).length;
+  const activeProj    = proyectos.filter(p=>!p.archivado).length;
+  const activeIdeas   = ideas.filter(i=>!i.archivado).length;
+  const total         = activeProj + activeIdeas;
+  document.getElementById('cntMain').textContent  = total;
+  document.getElementById('cntProys').textContent = activeProj;
+  document.getElementById('cntIdeas').textContent = activeIdeas;
+  // Toggle de archivados
+  const archCnt = document.getElementById('archCnt');
+  const archBtn = document.getElementById('archToggleBtn');
+  const archLbl = document.getElementById('archToggleLbl');
+  if(archCnt) archCnt.textContent = archivedCount;
+  if(archBtn) archBtn.style.display = archivedCount === 0 && !showArchived ? 'none' : 'flex';
+  if(archBtn) archBtn.classList.toggle('on', showArchived);
+  if(archLbl) archLbl.textContent = showArchived ? 'Ver activos' : 'Ver archivados';
+}
+
+// ═══════════════════════════════════════════════
+//  ARCHIVAR / RECARGAR
+// ═══════════════════════════════════════════════
+function toggleShowArchived(){
+  showArchived = !showArchived;
+  renderMain();
+}
+
+async function toggleArchive(id, type){
+  closeAllKdd();
+  const arr = type==='proy' ? proyectos : ideas;
+  const obj = arr.find(x => x.id === id);
+  if(!obj) return;
+  const newVal = !obj.archivado;
+  const { error } = await sb.from('proyectos').update({ archivado: newVal }).eq('id', id);
+  if(error){
+    // Si la columna no existe, error.code = '42703'
+    if(error.code === '42703' || error.message?.includes('archivado')){
+      toast('⚙️ Falta la columna "archivado" en la tabla proyectos. Ejecuta delete_setup.sql actualizado.', 'err');
+    } else {
+      toast('Error: ' + error.message, 'err');
+    }
+    console.error('[SpryvAI:archive]', error);
+    return;
+  }
+  obj.archivado = newVal;
+  toast(newVal ? '📦 Archivado' : '📤 Desarchivado', 'ok');
+  renderMain();
+}
+
+async function doReload(){
+  const btn = document.getElementById('reloadBtn');
+  btn?.classList.add('spinning');
+  try{
+    await loadData();
+    toast('🔄 Datos actualizados', 'ok');
+  } catch(e){
+    toast('Error recargando: ' + e.message, 'err');
+    console.error('[SpryvAI:reload]', e);
+  } finally {
+    setTimeout(() => btn?.classList.remove('spinning'), 400);
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1694,6 +1805,14 @@ function setupKeys(){
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){document.querySelectorAll('.ov.on').forEach(m=>m.classList.remove('on'));closeAllKdd();document.getElementById('notifPanel')?.classList.remove('on');document.getElementById('searchOverlay')?.classList.remove('on');}
     if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('globalSearch')?.focus();}
+    // Ctrl/Cmd + R → recargar datos (sin recargar la app entera)
+    if((e.ctrlKey||e.metaKey)&&e.key==='r'){
+      // Solo si estamos en la pantalla principal
+      if(document.getElementById('sMain')?.classList.contains('on')){
+        e.preventDefault();
+        doReload();
+      }
+    }
   });
 }
 
