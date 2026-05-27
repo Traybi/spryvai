@@ -479,6 +479,10 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 /* Responsive */
 @media(max-width:860px){.main-layout{grid-template-columns:1fr;}}
 @media(max-width:600px){.doc-inner{padding:18px 14px;}.det-side{display:none;}.hdr-search{display:none;}}
+
+/* Cuando se filtra por Trabajo o Personal, ocultar columna de ideas y centrar */
+.main-layout.filter-only-proy{grid-template-columns:1fr;max-width:780px;}
+.main-layout.filter-only-proy #colIdeas{display:none;}
 </style>
 </head>
 <body>
@@ -557,7 +561,7 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
     </button>
   </div>
   <div class="main-layout">
-    <div>
+    <div id="colProy">
       <div class="col-hdr">
         <div class="col-tit">📁 Proyectos</div>
         <button class="btn-add" onclick="openNewProy()">+ Proyecto</button>
@@ -569,7 +573,7 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
       </div>
       <div id="proyList"><div class="spin-sm"></div></div>
     </div>
-    <div>
+    <div id="colIdeas">
       <div class="col-hdr">
         <div class="col-tit">💡 Ideas sueltas</div>
         <button class="btn-add" onclick="openNewIdea()">+ Idea</button>
@@ -1029,6 +1033,11 @@ function setFilter(f,btn) {
   filterActive=f;
   document.querySelectorAll('.cfil').forEach(b=>{b.className='cfil';});
   btn.classList.add(f==='all'?'on':f==='Trabajo'?'on':'on-red');
+  // Cuando filtramos por una categoría concreta (Trabajo/Personal), ocultamos
+  // la columna de ideas porque las ideas sueltas no tienen ese tag → así el
+  // filtro de verdad reduce lo que se ve, en vez de quedarse a medias.
+  const layout = document.querySelector('.main-layout');
+  if(layout) layout.classList.toggle('filter-only-proy', f !== 'all');
   renderProyectos();
 }
 
