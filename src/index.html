@@ -1069,6 +1069,11 @@ function setFilter(f,btn) {
 // Cambia qué columna se ve (botones del nav superior)
 function setViewMode(mode){
   viewMode = mode;
+  // Si estamos en otra pantalla (proyecto/idea/búsqueda/etc), volver a Inicio
+  const mainScr = document.getElementById('sMain');
+  if(mainScr && !mainScr.classList.contains('on')){
+    nav('main');
+  }
   // Si paso a "ideas", el filtro Trabajo/Personal pierde sentido → lo reseteo
   if(mode === 'ideas' && filterActive !== 'all'){
     filterActive = 'all';
