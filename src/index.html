@@ -101,6 +101,12 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 .reload-btn:hover{border-color:var(--g);color:var(--g);}
 .reload-btn.spinning{animation:spin .8s linear infinite;}
 
+/* Barra de progreso top — aparece cuando algo está cargando */
+#topLoadBar{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--g),var(--blue),var(--g));background-size:200% 100%;z-index:99999;transition:width .3s ease,opacity .25s;opacity:0;pointer-events:none;}
+#topLoadBar.on{opacity:1;width:90%;animation:loadBarShimmer 1.4s linear infinite;}
+#topLoadBar.done{opacity:0;width:100%;}
+@keyframes loadBarShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
 /* Toggle archivados */
 .arch-toggle-row{max-width:1200px;margin:18px auto -8px;padding:0 24px;display:flex;justify-content:flex-end;}
 .arch-toggle-btn{display:flex;align-items:center;gap:7px;padding:6px 13px;background:var(--card);border:1px solid var(--border);border-radius:20px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;}
@@ -509,6 +515,8 @@ body{height:100%;background:var(--dark);color:var(--text);font-family:'DM Sans',
 </style>
 </head>
 <body>
+<!-- Barra de progreso superior (se enciende en operaciones de red) -->
+<div id="topLoadBar"></div>
 <div id="app">
 
 <!-- ── HEADER ── -->
@@ -1223,7 +1231,9 @@ async function toggleArchive(id, type){
   const obj = arr.find(x => x.id === id);
   if(!obj) return;
   const newVal = !obj.archivado;
+  loadStart();
   const { error } = await sb.from('proyectos').update({ archivado: newVal }).eq('id', id);
+  loadEnd();
   if(error){
     // Si la columna no existe, error.code = '42703'
     if(error.code === '42703' || error.message?.includes('archivado')){
@@ -1242,6 +1252,7 @@ async function toggleArchive(id, type){
 async function doReload(){
   const btn = document.getElementById('reloadBtn');
   btn?.classList.add('spinning');
+  loadStart();
   try{
     await loadData();
     toast('🔄 Datos actualizados', 'ok');
@@ -1250,6 +1261,28 @@ async function doReload(){
     console.error('[SpryvAI:reload]', e);
   } finally {
     setTimeout(() => btn?.classList.remove('spinning'), 400);
+    loadEnd();
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  BARRA DE CARGA SUPERIOR (feedback visual durante operaciones de red)
+// ═══════════════════════════════════════════════
+let _loadCount = 0;
+function loadStart(){
+  _loadCount++;
+  const bar = document.getElementById('topLoadBar');
+  if(bar){ bar.classList.remove('done'); bar.classList.add('on'); }
+}
+function loadEnd(){
+  _loadCount = Math.max(0, _loadCount - 1);
+  if(_loadCount === 0){
+    const bar = document.getElementById('topLoadBar');
+    if(bar){
+      bar.classList.add('done');
+      bar.classList.remove('on');
+      setTimeout(()=>bar.classList.remove('done'), 300);
+    }
   }
 }
 
@@ -1476,6 +1509,7 @@ async function analizar(panel, options = {}) {
 
   if(!autoTriggered) showLoading(obj.nombre);
   else { elaboratingIds.add(obj.id); renderMain(); }
+  loadStart();
 
   try {
     // Upload file
@@ -1602,7 +1636,7 @@ ${docStr?docStr+'\n\nINTEGRA el nuevo material. Reescribe completo y más rico.'
     else{const idx=ideas.findIndex(i=>i.id===obj.id);if(idx>=0)ideas[idx]={...ideas[idx],...payload};}
 
     if(!autoTriggered){
-      await sb.from('proyecto_entradas').insert({proyecto_id:isProj?obj.id:null,user_id:cu.id,archivo_nombre:fileName||'',archivo_url:fileUrl,nota}).catch(()=>{});
+      try { await sb.from('proyecto_entradas').insert({proyecto_id:isProj?obj.id:null,user_id:cu.id,archivo_nombre:fileName||'',archivo_url:fileUrl,nota}); } catch(e) { console.warn('[entradas]', e); }
       if(promptEl) promptEl.value='';
       clearFile(panel); clearVoice(panel);
       hideLoading();
@@ -1615,10 +1649,12 @@ ${docStr?docStr+'\n\nINTEGRA el nuevo material. Reescribe completo y más rico.'
       renderMain();
       toast(`✨ "${obj.nombre}" elaborado automáticamente`, 'ok');
     }
+    loadEnd();
 
   }catch(err){
     if(!autoTriggered) hideLoading();
     else { elaboratingIds.delete(obj.id); renderMain(); }
+    loadEnd();
     console.error('[SpryvAI:analizar]', err);
     toast(err.message,'err');
   }
@@ -1633,10 +1669,12 @@ async function createProy(){
   const nom=document.getElementById('npNom').value.trim(),desc=document.getElementById('npDesc').value.trim(),tag=document.getElementById('npTag').value,fecha=document.getElementById('npFecha').value;
   if(!nom)return toast('El nombre es obligatorio','err');
   document.getElementById('btnCP').disabled=true;
+  loadStart();
   const{data,error}=await sb.from('proyectos').insert({nombre:nom,descripcion:desc,tag:tag,fecha_limite:fecha||null,creador_id:cu.id}).select().single();
   document.getElementById('btnCP').disabled=false;
-  if(error)return toast('Error: '+error.message,'err');
-  await sb.from('proyecto_miembros').insert({proyecto_id:data.id,user_id:cu.id,rol:'creador'}).catch(()=>{});
+  if(error){ loadEnd(); return toast('Error: '+error.message,'err'); }
+  try { await sb.from('proyecto_miembros').insert({proyecto_id:data.id,user_id:cu.id,rol:'creador'}); } catch(e) { console.warn('[miembros]', e); }
+  loadEnd();
 
   // Mostrar inmediatamente la card en lista (en estado "elaborando")
   proyectos.unshift(data);
@@ -1680,8 +1718,10 @@ async function createIdea(){
     setTimeout(()=>{toggleAdd('projAddTgl',true);document.getElementById('projPrompt').value=`💡 Nueva idea: ${nom}\n\n${desc}`;updBtn('proj');toast('Idea añadida al proyecto. Pulsa "Elaborar con IA".','info');},300);
     return;
   }
+  loadStart();
   const{data,error}=await sb.from('proyectos').insert({nombre:nom,descripcion:desc,tag:'idea',creador_id:cu.id,es_idea_suelta:true}).select().single();
   document.getElementById('btnCI').disabled=false;
+  loadEnd();
   if(error)return toast('Error: '+error.message,'err');
 
   // Mostrar inmediatamente la card en lista (en estado "elaborando")
@@ -1716,7 +1756,7 @@ async function confirmAssign(ideaId,proyId){
   if(!proy||!idea)return;
   cp=proy; projTab=0; showProy();
   setTimeout(()=>{toggleAdd('projAddTgl',true);document.getElementById('projPrompt').value=`💡 Idea asignada: "${idea.nombre}"\n\n${idea.descripcion||''}\n\n${idea.documento?.secciones?.map(s=>s.titulo+': '+s.contenido).join('\n\n')||''}`;updBtn('proj');toast(`Idea asignada a "${proy.nombre}". Pulsa "Elaborar con IA".`,'info');},300);
-  await sb.from('proyectos').update({asignado_a_proyecto:proyId}).eq('id',ideaId).catch(()=>{});
+  try { await sb.from('proyectos').update({asignado_a_proyecto:proyId}).eq('id',ideaId); } catch(e) { console.warn('[assign]', e); }
 }
 
 // ═══════════════════════════════════════════════
@@ -1757,6 +1797,7 @@ async function confirmDelete(){
   // Llamada DIRECTA por fetch a la RPC (sin pasar por supabase-js)
   // Esto nos da control total sobre headers, respuesta y errores.
   let resp, bodyText;
+  loadStart();
   try{
     resp = await fetch(`${SURL}/rest/v1/rpc/delete_proyecto`, {
       method: 'POST',
@@ -1769,10 +1810,12 @@ async function confirmDelete(){
     });
     bodyText = await resp.text();
   }catch(e){
+    loadEnd();
     console.error('[SpryvAI:delete] Fallo de red:', e);
     alert(`No se pudo conectar con Supabase:\n\n${e.message}\n\nRevisa tu conexión y reintenta.`);
     return;
   }
+  loadEnd();
 
   console.log('[SpryvAI:delete] HTTP', resp.status, '· Body:', bodyText);
 
