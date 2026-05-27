@@ -1,89 +1,98 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
+// ═══════════════════════════════════════════════════════════════════════════
+// SpryvAI · main.js (proceso principal de Electron)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Este archivo:
+//   1. Crea la ventana de la app
+//   2. Carga el HTML principal (src/index.html)
+//   3. Configura el menú con TODOS los shortcuts de copiar/pegar/etc.
+//      ↑ Sin esto, en Electron no funciona ni Ctrl+C ni Ctrl+V
+//
+// Si ya tienes un main.js con personalización (contador FPS, etc.),
+// la parte clave que TE FALTA es el Menu.setApplicationMenu de abajo.
+// Cópiala a tu main.js existente justo después de crear la ventana.
+//
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Guardar configuración en AppData del usuario
-const Store = require('electron-store');
-const store = new Store({
-  name: 'spryvai-config',
-  encryptionKey: 'spryvai-deloitte-2026'
-});
+const { app, BrowserWindow, Menu, shell } = require('electron');
+const path = require('path');
 
 let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1400,
+    height: 900,
     minWidth: 900,
     minHeight: 600,
     title: 'SpryvAI',
-    icon: path.join(__dirname, 'assets', 'icon.ico'),
+    icon: path.join(__dirname, 'assets', 'icon.png'), // ajusta si tu icono está en otra ruta
     backgroundColor: '#0a0a0a',
-    show: false,
+    autoHideMenuBar: false, // mostrar barra de menú (donde están Editar, Ver, etc.)
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
-      nodeIntegration: false
-    },
-    titleBarStyle: 'default',
-    autoHideMenuBar: true
+      nodeIntegration: false,
+      spellcheck: false
+    }
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
+  // Abrir enlaces externos en el navegador del SO, no en la app
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
-
-  mainWindow.on('closed', () => { mainWindow = null; });
 }
 
-app.whenReady().then(createWindow);
+// ─── MENU con shortcuts de edición (copiar, pegar, cortar, etc.) ──────────
+// ESTA ES LA PARTE CRÍTICA. Sin este menú, Ctrl+C / Ctrl+V no funcionan
+// dentro de la app porque Electron no los activa por defecto.
+const menuTemplate = [
+  {
+    label: 'Archivo',
+    submenu: [
+      { role: 'reload', label: 'Recargar', accelerator: 'CmdOrCtrl+R' },
+      { role: 'forceReload', label: 'Forzar recarga', accelerator: 'CmdOrCtrl+Shift+R' },
+      { type: 'separator' },
+      { role: 'quit', label: 'Salir' }
+    ]
+  },
+  {
+    label: 'Editar',
+    submenu: [
+      { role: 'undo',      label: 'Deshacer',           accelerator: 'CmdOrCtrl+Z' },
+      { role: 'redo',      label: 'Rehacer',            accelerator: 'CmdOrCtrl+Y' },
+      { type: 'separator' },
+      { role: 'cut',       label: 'Cortar',             accelerator: 'CmdOrCtrl+X' },
+      { role: 'copy',      label: 'Copiar',             accelerator: 'CmdOrCtrl+C' },
+      { role: 'paste',     label: 'Pegar',              accelerator: 'CmdOrCtrl+V' },
+      { role: 'selectAll', label: 'Seleccionar todo',   accelerator: 'CmdOrCtrl+A' }
+    ]
+  },
+  {
+    label: 'Ver',
+    submenu: [
+      { role: 'zoomIn',    label: 'Acercar',            accelerator: 'CmdOrCtrl+=' },
+      { role: 'zoomOut',   label: 'Alejar',             accelerator: 'CmdOrCtrl+-' },
+      { role: 'resetZoom', label: 'Restablecer zoom',   accelerator: 'CmdOrCtrl+0' },
+      { type: 'separator' },
+      { role: 'togglefullscreen', label: 'Pantalla completa', accelerator: 'F11' },
+      { role: 'toggleDevTools',   label: 'Consola de desarrollador', accelerator: 'F12' }
+    ]
+  }
+];
+
+app.whenReady().then(() => {
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+  createWindow();
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
 
 app.on('window-all-closed', () => {
-  app.quit();
-});
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) createWindow();
-});
-
-// ── IPC: API KEY ──
-ipcMain.handle('get-api-key', () => {
-  return store.get('apiKey', '');
-});
-
-ipcMain.handle('set-api-key', (event, key) => {
-  store.set('apiKey', key.trim());
-  return true;
-});
-
-// ── IPC: PROYECTOS (persistencia local) ──
-ipcMain.handle('get-proyectos', () => {
-  return store.get('proyectos', null);
-});
-
-ipcMain.handle('save-proyectos', (event, proyectos) => {
-  store.set('proyectos', proyectos);
-  return true;
-});
-
-// ── IPC: EXPORTAR DOCUMENTO ──
-ipcMain.handle('exportar-doc', (event, { nombre, contenido }) => {
-  const { dialog } = require('electron');
-  const result = dialog.showSaveDialogSync(mainWindow, {
-    title: 'Guardar documento',
-    defaultPath: path.join(app.getPath('documents'), nombre + '.txt'),
-    filters: [
-      { name: 'Documento de texto', extensions: ['txt'] },
-      { name: 'Todos los archivos', extensions: ['*'] }
-    ]
-  });
-  if (result) {
-    fs.writeFileSync(result, contenido, 'utf-8');
-    return { ok: true, ruta: result };
-  }
-  return { ok: false };
+  if (process.platform !== 'darwin') app.quit();
 });
