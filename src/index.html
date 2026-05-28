@@ -1144,11 +1144,11 @@ function renderProyectos() {
         <button class="kebab-btn" onclick="toggleKdd('kdd-${p.id}')">⋯</button>
         <div class="kdd" id="kdd-${p.id}">
           <div class="kdi" onclick="openProy('${p.id}')"><span class="ki">↗</span>Abrir</div>
-          <div class="kdi" onclick="startRename('${p.id}','proy',${JSON.stringify(p.nombre)})"><span class="ki">✏️</span>Renombrar</div>
+          <div class="kdi" onclick="startRename('${p.id}','proy')"><span class="ki">✏️</span>Renombrar</div>
           <div class="kdi" onclick="togglePin('${p.id}')"><span class="ki">${isPinned?'📍':'📌'}</span>${isPinned?'Desanclar':'Anclar'}</div>
           <div class="kdi" onclick="toggleArchive('${p.id}','proy')"><span class="ki">${isArch?'📤':'📦'}</span>${isArch?'Desarchivar':'Archivar'}</div>
           <div class="kd-sep"></div>
-          <div class="kdi danger" onclick="startDelete('${p.id}','proy',${JSON.stringify(p.nombre)})"><span class="ki">🗑</span>Eliminar</div>
+          <div class="kdi danger" onclick="startDelete('${p.id}','proy')"><span class="ki">🗑</span>Eliminar</div>
         </div>
       </div>
     </div>`;
@@ -1189,11 +1189,11 @@ function renderIdeas() {
         <button class="kebab-btn" onclick="toggleKdd('kdd-i-${idea.id}')">⋯</button>
         <div class="kdd" id="kdd-i-${idea.id}">
           <div class="kdi" onclick="openIdea('${idea.id}')"><span class="ki">↗</span>Abrir</div>
-          <div class="kdi" onclick="startRename('${idea.id}','idea',${JSON.stringify(idea.nombre)})"><span class="ki">✏️</span>Renombrar</div>
+          <div class="kdi" onclick="startRename('${idea.id}','idea')"><span class="ki">✏️</span>Renombrar</div>
           <div class="kdi" onclick="openAssignProyModal('${idea.id}')"><span class="ki">📁</span>Mover a proyecto</div>
           <div class="kdi" onclick="toggleArchive('${idea.id}','idea')"><span class="ki">${isArch?'📤':'📦'}</span>${isArch?'Desarchivar':'Archivar'}</div>
           <div class="kd-sep"></div>
-          <div class="kdi danger" onclick="startDelete('${idea.id}','idea',${JSON.stringify(idea.nombre)})"><span class="ki">🗑</span>Eliminar</div>
+          <div class="kdi danger" onclick="startDelete('${idea.id}','idea')"><span class="ki">🗑</span>Eliminar</div>
         </div>
       </div>
     </div>`;
@@ -1771,7 +1771,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.kebab-wrap'))closeA
 
 function togglePin(id){const p=pinned(),i=p.indexOf(id);if(i>=0)p.splice(i,1);else p.unshift(id);setPinned(p);closeAllKdd();renderProyectos();toast(i>=0?'Desanclado':'📌 Anclado arriba','ok');}
 
-function startRename(id,type,nom){closeAllKdd();renameTarget=id;renameType=type;document.getElementById('renameInp').value=nom;openModal('mRename');setTimeout(()=>{document.getElementById('renameInp').focus();document.getElementById('renameInp').select();},100);}
+function startRename(id,type){closeAllKdd();renameTarget=id;renameType=type;const obj=(type==='proy'?proyectos:ideas).find(x=>x.id===id);const nom=obj?.nombre||'';document.getElementById('renameInp').value=nom;openModal('mRename');setTimeout(()=>{document.getElementById('renameInp').focus();document.getElementById('renameInp').select();},100);}
 async function confirmRename(){
   const nom=document.getElementById('renameInp').value.trim();
   if(!nom)return toast('El nombre no puede estar vacío','err');
@@ -1782,10 +1782,12 @@ async function confirmRename(){
   closeModal('mRename');toast('✓ Renombrado','ok');
 }
 
-function startDelete(id,type,nom){
+function startDelete(id,type){
   closeAllKdd();
   deleteTarget=id;
   deleteType=type;
+  const obj=(type==='proy'?proyectos:ideas).find(x=>x.id===id);
+  const nom=obj?.nombre||'este elemento';
   document.getElementById('delNomConfirm').textContent=`"${nom}"`;
   // Reset del área de diagnóstico cada vez que se abre el modal
   const diag = document.getElementById('delDiag');
